@@ -1,2236 +1,1670 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Imobiliário</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    :root {
-      --bg: #f4f6fb;
-      --sidebar: #1a1f2e;
-      --card: #ffffff;
-      --muted: #64748b;
-      --primary: #3b82f6;
-      --accent: #2563eb;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: #0f172a;
-    }
-    .app {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      width: 260px;
-      padding: 20px;
-      background: var(--sidebar);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      transition: width 0.3s;
-      flex-shrink: 0;
-      z-index: 100;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-    .logo {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-    .brand-text h3 {
-      font-size: 16px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .brand-text small {
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    nav {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .nav-btn {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: rgba(255, 255, 255, 0.9);
-      cursor: pointer;
-      font-weight: 600;
-      text-align: left;
-      width: 100%;
-      min-height: 48px;
-      transition: background 0.2s, color 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    .nav-btn .material-icons {
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-    .nav-btn .label {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .nav-btn:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .nav-btn.active {
-      background: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-    }
-    .sidebar-footer {
-      margin-top: auto;
-      color: var(--muted);
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .workspace {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-    .topbar {
-      height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      background: var(--card);
-      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-    }
-    .page-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #0f172a;
-    }
-    .user-area {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-    }
-    .main-area {
-      padding: 24px;
-      overflow: auto;
-    }
-    .container {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 24px;
-      border: 1px solid rgba(15, 23, 42, 0.06);
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-      margin-bottom: 20px;
-    }
-    h2 {
-      margin: 0 0 16px 0;
-      color: #0f172a;
-      font-size: 18px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-    }
-    .col-full {
-      grid-column: 1 / -1;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 13px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(15, 23, 42, 0.1);
-      background: #fff;
-      color: #0f172a;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      transition: border-color 0.2s;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    .btn.primary {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      color: #fff;
-    }
-    .btn.ghost {
-      background: transparent;
-      border: 1px solid rgba(15, 23, 42, 0.1);
-      color: #0f172a;
-    }
-    .btn.danger {
-      background: var(--danger);
-      color: #fff;
-    }
-    .btn.success {
-      background: var(--success);
-      color: #fff;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-      text-align: left;
-      font-size: 14px;
-    }
-    th {
-      color: var(--muted);
-      font-weight: 700;
-      background: rgba(59, 130, 246, 0.03);
-    }
-    td .btn {
-      padding: 6px 10px;
-      font-size: 12px;
-    }
-    .no-data {
-      color: var(--muted);
-      padding: 40px;
-      text-align: center;
-    }
-    .alert {
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 14px;
-    }
-    .alert.success {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1px solid #10b981;
-    }
-    .alert.error {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #ef4444;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .status-disponivel { background: #d1fae5; color: #065f46; }
-    .status-alugado { background: #dbeafe; color: #1e40af; }
-    .status-vendido { background: #fce7f3; color: #9f1239; }
-    .status-reservado { background: #fef3c7; color: #92400e; }
-
-    .card-imovel {
-      background: #fff;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      transition: all 0.2s;
-    }
-    .card-imovel:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transform: translateY(-2px);
-    }
-    .card-imovel h3 {
-      margin: 0 0 8px 0;
-      color: #0f172a;
-      font-size: 16px;
-    }
-    .card-imovel p {
-      margin: 4px 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .card-imovel .price {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary);
-      margin: 8px 0;
-    }
-
-    .upload-box {
-      border: 2px dashed rgba(15, 23, 42, 0.2);
-      border-radius: 12px;
-      padding: 30px;
-      text-align: center;
-      background: rgba(59, 130, 246, 0.02);
-      cursor: pointer;
-      transition: all 0.3s;
-      min-height: 200px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .upload-box:hover {
-      border-color: var(--primary);
-      background: rgba(59, 130, 246, 0.05);
-    }
-    .upload-box.dragover {
-      border-color: var(--primary);
-      background: rgba(59, 130, 246, 0.1);
-    }
-    .preview-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .preview-item {
-      position: relative;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 2px solid rgba(15, 23, 42, 0.08);
-      aspect-ratio: 1;
-    }
-    .preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .preview-item .remove-btn {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 16px;
-      opacity: 0.9;
-      transition: opacity 0.2s;
-    }
-    .preview-item .remove-btn:hover {
-      opacity: 1;
-    }
-
-    .upload-area {
-      border: 2px dashed rgba(15, 23, 42, 0.2);
-      border-radius: 12px;
-      padding: 40px;
-      text-align: center;
-      background: rgba(59, 130, 246, 0.02);
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .upload-area:hover {
-      border-color: var(--primary);
-      background: rgba(59, 130, 246, 0.05);
-    }
-    .upload-area.dragover {
-      border-color: var(--primary);
-      background: rgba(59, 130, 246, 0.1);
-    }
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
-    }
-    .photo-card {
-      position: relative;
-      background: #fff;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.2s;
-    }
-    .photo-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transform: translateY(-2px);
-    }
-    .photo-card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      display: block;
-    }
-    .photo-info {
-      padding: 12px;
-    }
-    .photo-info .price {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
-    .photo-info .description {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .photo-actions {
-      display: flex;
-      gap: 8px;
-      padding: 0 12px 12px;
-    }
-    .photo-actions .btn {
-      flex: 1;
-      justify-content: center;
-      padding: 6px 8px;
-      font-size: 12px;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal.active {
-      display: flex;
-    }
-    .modal-content {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 24px;
-      max-width: 500px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .modal-header h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--muted);
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      transition: all 0.2s;
-    }
-    .modal-close:hover {
-      background: rgba(15, 23, 42, 0.05);
-      color: #0f172a;
-    }
-    .modal img {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-
-    /* --- CSS do Carrossel (Visualização de Cliente) --- */
-
-    .property-view-container {
-      max-width: 800px;
-      margin: 0 auto;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Imobiliário</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --sidebar: #1a1f2e;
+      --card: #ffffff;
+      --muted: #64748b;
+      --primary: #3b82f6;
+      --accent: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
     }
-
-    .carousel-container {
-      position: relative;
-      overflow: hidden;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      margin-bottom: 20px;
-      background: #000;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: #0f172a;
     }
-
-    .carousel-track {
+    .app {
       display: flex;
-      transition: transform 0.4s ease-in-out;
+      min-height: 100vh;
     }
 
-    .carousel-slide {
+    .sidebar {
+      width: 260px;
+      padding: 20px;
+      background: var(--sidebar);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      transition: width 0.3s;
       flex-shrink: 0;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .brand-text h3 {
+      font-size: 16px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .brand-text small {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      font-weight: 600;
+      text-align: left;
       width: 100%;
-      aspect-ratio: 16 / 9; /* Proporção widescreen para imagens */
-      position: relative;
+      min-height: 48px;
+      transition: background 0.2s, color 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .nav-btn .material-icons {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .nav-btn .label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .nav-btn.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+    .sidebar-footer {
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .carousel-slide img {
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .topbar {
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--card);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .user-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .main-area {
+      padding: 24px;
+      overflow: auto;
+    }
+    .container {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin: 0 0 16px 0;
+      color: #0f172a;
+      font-size: 18px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .col-full {
+      grid-column: 1 / -1;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      background: #fff;
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+    }
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      color: #0f172a;
+    }
+    .btn.danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn.success {
+      background: var(--success);
+      color: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      background: rgba(59, 130, 246, 0.03);
+    }
+    td .btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .no-data {
+      color: var(--muted);
+      padding: 40px;
+      text-align: center;
+    }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .alert.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+    .alert.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-disponivel { background: #d1fae5; color: #065f46; }
+    .status-alugado { background: #dbeafe; color: #1e40af; }
+    .status-vendido { background: #fce7f3; color: #9f1239; }
+    .status-reservado { background: #fef3c7; color: #92400e; }
+
+    .card-imovel {
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+    .card-imovel:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+    .card-imovel h3 {
+      margin: 0 0 8px 0;
+      color: #0f172a;
+      font-size: 16px;
+    }
+    .card-imovel p {
+      margin: 4px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .card-imovel .price {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 8px 0;
+    }
+
+    .upload-box {
+      border: 2px dashed rgba(15, 23, 42, 0.2);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      background: rgba(59, 130, 246, 0.02);
+      cursor: pointer;
+      transition: all 0.3s;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .upload-box:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.05);
+    }
+    .upload-box.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .preview-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(15, 23, 42, 0.08);
+      aspect-ratio: 1;
+    }
+    .preview-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-
-    .carousel-caption {
+    .preview-item .remove-btn {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
-      padding: 10px 15px;
-      font-size: 14px;
-    }
-
-    .carousel-nav-btn {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.4);
+      top: 4px;
+      right: 4px;
+      background: var(--danger);
       color: white;
       border: none;
-      padding: 12px;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      z-index: 50;
-      font-size: 24px;
-      line-height: 1;
-      transition: background 0.2s;
+      font-size: 16px;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+    .preview-item .remove-btn:hover {
+      opacity: 1;
     }
 
-    .carousel-nav-btn:hover {
-      background: rgba(0, 0, 0, 0.7);
+    .upload-area {
+      border: 2px dashed rgba(15, 23, 42, 0.2);
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      background: rgba(59, 130, 246, 0.02);
+      cursor: pointer;
+      transition: all 0.3s;
     }
-
-    .carousel-nav-btn.prev {
-      left: 10px;
-      border-radius: 50%;
+    .upload-area:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.05);
     }
-
-    .carousel-nav-btn.next {
-      right: 10px;
-      border-radius: 50%;
+    .upload-area.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
     }
-
-    .property-details .detail-item {
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .photo-card {
+      position: relative;
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .photo-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+    .photo-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-info {
+      padding: 12px;
+    }
+    .photo-info .price {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .photo-info .description {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .photo-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 12px 12px;
+    }
+    .photo-actions .btn {
+      flex: 1;
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px dashed rgba(15, 23, 42, 0.1);
-      font-size: 15px;
+      align-items: center;
+      margin-bottom: 20px;
     }
-
-    .property-details .detail-item strong {
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: rgba(15, 23, 42, 0.05);
       color: #0f172a;
     }
-
-    .property-details .detail-item span {
-      color: var(--muted);
+    .modal img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 16px;
     }
 
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 70px;
-        padding: 16px 8px;
-      }
-      .brand-text, .sidebar-footer, .nav-btn .label {
-        display: none;
-      }
-      .nav-btn {
-        justify-content: center;
-        padding: 12px 8px;
-        gap: 0;
-      }
-      .brand {
-        justify-content: center;
-        margin-bottom: 10px;
-      }
-      .logo {
-        margin: 0 auto;
-      }
-      .topbar {
-        padding: 0 16px;
-      }
-      .page-title {
-        font-size: 16px;
-      }
-      .user-info {
-        display: none;
-      }
-      .main-area {
-        padding: 16px;
-      }
-      .container {
-        padding: 16px;
-      }
-      .grid {
-        grid-template-columns: 1fr;
-      }
-      table {
-        font-size: 12px;
-      }
-      th, td {
-        padding: 8px;
-      }
-      .gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      }
-      .upload-area, .upload-box {
-        padding: 30px 20px;
-      }
-      .preview-grid {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      }
-    }
-
-    @media (max-width: 480px) {
-      .actions {
-        flex-direction: column;
-        width: 100%;
-      }
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-      table {
-        display: block;
-        overflow-x: auto;
-      }
-      .gallery-grid {
-        grid-template-columns: 1fr;
-      }
-      .modal-content {
-        padding: 16px;
-      }
-    }
-
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Estilos para a impressão (Visualização Cliente) */
-    @media print {
-        .app, .sidebar, .topbar, .actions button:not(.btn.success), #propertyViewTitle {
-            display: none !important;
-        }
-        .main-area {
-            padding: 0 !important;
-        }
-        #visualizacao {
-            display: block !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-        }
-        .property-view-container {
-            max-width: 100% !important;
-            margin: 0 !important;
-        }
-        .container {
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        .carousel-container {
-            display: none !important; /* Esconde o carrossel na impressão */
-        }
-        /* Mostra todas as fotos empilhadas para impressão */
-        .property-view-container img {
-            width: 100%;
-            display: block;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 70px;
+        padding: 16px 8px;
+      }
+      .brand-text, .sidebar-footer, .nav-btn .label {
+        display: none;
+      }
+      .nav-btn {
+        justify-content: center;
+        padding: 12px 8px;
+        gap: 0;
+      }
+      .brand {
+        justify-content: center;
+        margin-bottom: 10px;
+      }
+      .logo {
+        margin: 0 auto;
+      }
+      .topbar {
+        padding: 0 16px;
+      }
+      .page-title {
+        font-size: 16px;
+      }
+      .user-info {
+        display: none;
+      }
+      .main-area {
+        padding: 16px;
+      }
+      .container {
+        padding: 16px;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      table {
+        font-size: 12px;
+      }
+      th, td {
+        padding: 8px;
+      }
+      .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+      .upload-area, .upload-box {
+        padding: 30px 20px;
+      }
+      .preview-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      }
     }
-  </style>
+
+    @media (max-width: 480px) {
+      .actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+      .modal-content {
+        padding: 16px;
+      }
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🏠</div>
-        <div class="brand-text">
-          <h3>Imobiliária Pro</h3>
-          <small>Sistema de Gestão</small>
-        </div>
-        </div>
-        <nav>
-          <button class="nav-btn active" data-tab="cadastro">
-            <span class="material-icons">add_home</span>
-            <span class="label">Cadastro</span>
-          </button>
-          <button class="nav-btn" data-tab="imoveis">
-            <span class="material-icons">home_work</span>
-            <span class="label">Imóveis</span>
-          </button>
-          <button class="nav-btn" data-tab="galeria">
-            <span class="material-icons">photo_library</span>
-            <span class="label">Galeria</span>
-          </button>
-          <button class="nav-btn" data-tab="clientes">
-            <span class="material-icons">people</span>
-            <span class="label">Clientes</span>
-          </button>
-          <button class="nav-btn" data-tab="visitas">
-            <span class="material-icons">event</span>
-            <span class="label">Visitas</span>
-          </button>
-          <button class="nav-btn" data-tab="ferramentas">
-            <span class="material-icons">calculate</span>
-            <span class="label">Ferramentas</span>
-          </button>
-          <button class="nav-btn" data-tab="visualizacao">
-            <span class="material-icons">visibility</span>
-            <span class="label">Visualização Cliente</span>
-          </button>
-        </nav>
-        <div class="sidebar-footer">
-          <div style="font-size:12px;margin-top:8px">
-            <strong>Armazenamento:</strong> Local
-          </div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">
-            Dados salvos no navegador
-          </div>
-        </div>
-    </aside>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🏠</div>
+        <div class="brand-text">
+          <h3>Imobiliária Pro</h3>
+          <small>Sistema de Gestão</small>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-btn active" data-tab="cadastro">
+          <span class="material-icons">add_home</span>
+          <span class="label">Cadastro</span>
+        </button>
+        <button class="nav-btn" data-tab="imoveis">
+          <span class="material-icons">home_work</span>
+          <span class="label">Imóveis</span>
+        </button>
+        <button class="nav-btn" data-tab="galeria">
+          <span class="material-icons">photo_library</span>
+          <span class="label">Galeria</span>
+        </button>
+        <button class="nav-btn" data-tab="clientes">
+          <span class="material-icons">people</span>
+          <span class="label">Clientes</span>
+        </button>
+        <button class="nav-btn" data-tab="visitas">
+          <span class="material-icons">event</span>
+          <span class="label">Visitas</span>
+        </button>
+        <button class="nav-btn" data-tab="ferramentas">
+          <span class="material-icons">calculate</span>
+          <span class="label">Ferramentas</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="font-size:12px;margin-top:8px">
+          <strong>Armazenamento:</strong> Local
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">
+          Dados salvos no navegador
+        </div>
+      </div>
+    </aside>
 
-    <div class="workspace">
-      <div class="topbar">
-        <div class="page-title" id="pageTitle">Cadastro de Imóvel</div>
-        <div class="user-area">
-          <div class="user-info" style="text-align:right">
-            <div style="font-weight:700;font-size:14px">Sistema Local</div>
-            <div style="font-size:12px;color:var(--muted)">Gestão Imobiliária</div>
-          </div>
-          <div class="avatar">🏢</div>
-        </div>
-      </div>
+    <div class="workspace">
+      <div class="topbar">
+        <div class="page-title" id="pageTitle">Cadastro de Imóvel</div>
+        <div class="user-area">
+          <div class="user-info" style="text-align:right">
+            <div style="font-weight:700;font-size:14px">Sistema Local</div>
+            <div style="font-size:12px;color:var(--muted)">Gestão Imobiliária</div>
+          </div>
+          <div class="avatar">🏢</div>
+        </div>
+      </div>
 
-      <main class="main-area">
-        <section id="cadastro" class="tab-content active">
-          <div class="container">
-            <h2>Cadastro de Imóvel</h2>
-            <div id="alertCadastro"></div>
-            <form id="formCadastro">
-              <div class="grid">
-                <div>
-                  <label>Tipo de Imóvel *</label>
-                  <select name="tipo" required>
-                    <option value="">Selecione...</option>
-                    <option value="Casa">Casa</option>
-                    <option value="Apartamento">Apartamento</option>
-                    <option value="Terreno">Terreno</option>
-                    <option value="Comercial">Comercial</option>
-                    <option value="Rural">Rural</option>
-                    <option value="Galpão">Galpão</option>
-                    <option value="Cobertura">Cobertura</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Finalidade *</label>
-                  <select name="finalidade" required>
-                    <option value="Venda">Venda</option>
-                    <option value="Aluguel">Aluguel</option>
-                    <option value="Venda/Aluguel">Venda/Aluguel</option>
-                  </select>
-                </div>
-                <div class="col-full">
-                  <label>Endereço Completo *</label>
-                  <input name="endereco" type="text" required placeholder="Rua, nº, bairro, cidade - UF">
-                </div>
-                <div>
-                  <label>CEP</label>
-                  <input name="cep" type="text" placeholder="00000-000">
-                </div>
-                <div>
-                  <label>Área (m²)</label>
-                  <input name="area" type="number" step="0.01" placeholder="Ex: 120.50">
-                </div>
-                <div>
-                  <label>Quartos</label>
-                  <input name="quartos" type="number" min="0" placeholder="Ex: 3">
-                </div>
-                <div>
-                  <label>Banheiros</label>
-                  <input name="banheiros" type="number" min="0" placeholder="Ex: 2">
-                </div>
-                <div>
-                  <label>Vagas de Garagem</label>
-                  <input name="vagas" type="number" min="0" placeholder="Ex: 2">
-                </div>
-                <div>
-                  <label>Valor (R$) *</label>
-                  <input name="valor" type="number" step="0.01" required placeholder="0.00">
-                </div>
-                <div>
-                  <label>Condomínio (R$)</label>
-                  <input name="condominio" type="number" step="0.01" placeholder="0.00">
-                </div>
-                <div>
-                  <label>IPTU (R$)</label>
-                  <input name="iptu" type="number" step="0.01" placeholder="0.00">
-                </div>
-                <div>
-                  <label>Status *</label>
-                  <select name="status" required>
-                    <option value="Disponível">Disponível</option>
-                    <option value="Alugado">Alugado</option>
-                    <option value="Vendido">Vendido</option>
-                    <option value="Reservado">Reservado</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Proprietário</label>
-                  <input name="proprietario" type="text" placeholder="Nome do proprietário">
-                </div>
-                <div class="col-full">
-                  <label>Características / Observações</label>
-                  <textarea name="observacoes" placeholder="Ex: Piscina, churrasqueira, armários embutidos, etc."></textarea>
-                </div>
+      <main class="main-area">
+        <section id="cadastro" class="tab-content active">
+          <div class="container">
+            <h2>Cadastro de Imóvel</h2>
+            <div id="alertCadastro"></div>
+            <form id="formCadastro">
+              <div class="grid">
+                <div>
+                  <label>Tipo de Imóvel *</label>
+                  <select name="tipo" required>
+                    <option value="">Selecione...</option>
+                    <option value="Casa">Casa</option>
+                    <option value="Apartamento">Apartamento</option>
+                    <option value="Terreno">Terreno</option>
+                    <option value="Comercial">Comercial</option>
+                    <option value="Rural">Rural</option>
+                    <option value="Galpão">Galpão</option>
+                    <option value="Cobertura">Cobertura</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Finalidade *</label>
+                  <select name="finalidade" required>
+                    <option value="Venda">Venda</option>
+                    <option value="Aluguel">Aluguel</option>
+                    <option value="Venda/Aluguel">Venda/Aluguel</option>
+                  </select>
+                </div>
+                <div class="col-full">
+                  <label>Endereço Completo *</label>
+                  <input name="endereco" type="text" required placeholder="Rua, nº, bairro, cidade - UF">
+                </div>
+                <div>
+                  <label>CEP</label>
+                  <input name="cep" type="text" placeholder="00000-000">
+                </div>
+                <div>
+                  <label>Área (m²)</label>
+                  <input name="area" type="number" step="0.01" placeholder="Ex: 120.50">
+                </div>
+                <div>
+                  <label>Quartos</label>
+                  <input name="quartos" type="number" min="0" placeholder="Ex: 3">
+                </div>
+                <div>
+                  <label>Banheiros</label>
+                  <input name="banheiros" type="number" min="0" placeholder="Ex: 2">
+                </div>
+                <div>
+                  <label>Vagas de Garagem</label>
+                  <input name="vagas" type="number" min="0" placeholder="Ex: 2">
+                </div>
+                <div>
+                  <label>Valor (R$) *</label>
+                  <input name="valor" type="number" step="0.01" required placeholder="0.00">
+                </div>
+                <div>
+                  <label>Condomínio (R$)</label>
+                  <input name="condominio" type="number" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                  <label>IPTU (R$)</label>
+                  <input name="iptu" type="number" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                  <label>Status *</label>
+                  <select name="status" required>
+                    <option value="Disponível">Disponível</option>
+                    <option value="Alugado">Alugado</option>
+                    <option value="Vendido">Vendido</option>
+                    <option value="Reservado">Reservado</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Proprietário</label>
+                  <input name="proprietario" type="text" placeholder="Nome do proprietário">
+                </div>
+                <div class="col-full">
+                  <label>Características / Observações</label>
+                  <textarea name="observacoes" placeholder="Ex: Piscina, churrasqueira, armários embutidos, etc."></textarea>
+                </div>
 
-                <div class="col-full">
-                  <label>Fotos do Imóvel</label>
-                  <div class="upload-box" id="uploadBoxCadastro">
-                    <span class="material-icons" style="font-size:48px;color:var(--primary);margin-bottom:12px">add_photo_alternate</span>
-                    <p style="font-size:16px;font-weight:600;margin-bottom:8px;color:#0f172a">Clique ou arraste fotos aqui</p>
-                    <p style="font-size:13px;color:var(--muted)">JPG, PNG, GIF (máx. 5MB cada)</p>
-                    <input type="file" id="fileInputCadastro" accept="image/*" multiple style="display:none">
-                </div>
-                  <div class="preview-grid" id="previewGridCadastro"></div>
-                </div>
-              </div>
-              <div class="actions">
-                <button type="submit" class="btn primary">
-                  <span class="material-icons">save</span> Salvar Imóvel
-                </button>
-                <button type="button" class="btn ghost" id="btnLimparForm">
-                  <span class="material-icons">clear</span> Limpar Formulário
-                </button>
-                <button type="button" class="btn success" id="btnExportPdf">
-                  <span class="material-icons">picture_as_pdf</span> Exportar Ficha (PDF)
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-
-        <section id="imoveis" class="tab-content">
-          <div class="container">
-            <h2>Imóveis Cadastrados</h2>
-            <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-              <input type="text" id="searchImoveis" placeholder="Pesquisar imóveis..." style="flex:1;min-width:200px">
-              <button class="btn primary" id="btnRefreshImoveis">
-                <span class="material-icons">refresh</span> Atualizar
-              </button>
-              <button class="btn success" id="btnExportCsv">
-                <span class="material-icons">download</span> Exportar CSV
-              </button>
-            </div>
-            <div id="listaImoveis"></div>
-          </div>
-        </section>
-
-        <section id="galeria" class="tab-content">
-          <div class="container">
-            <h2>Galeria de Fotos (<span id="photoCount">0</span> fotos)</h2>
-            <div id="alertGaleria"></div>
-            <input type="text" id="searchGaleria" placeholder="Pesquisar fotos..." style="margin-bottom:16px">
-            <div class="upload-area" id="uploadArea">
-              <span class="material-icons" style="font-size:64px;color:var(--primary);margin-bottom:16px">cloud_upload</span>
-              <h3 style="margin:0 0 8px 0">Adicionar Fotos à Galeria</h3>
-              <p style="color:var(--muted);font-size:14px">Clique ou arraste imagens aqui</p>
-              <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
-            </div>
-            <div class="gallery-grid" id="galleryGrid"></div>
-          </div>
-        </section>
-
-        <section id="clientes" class="tab-content">
-          <div class="container">
-            <h2>Cadastro de Clientes</h2>
-            <div id="alertClientes"></div>
-            <form id="formClientes">
-              <div class="grid">
-                <div>
-                  <label>Nome Completo *</label>
-                  <input name="nome" type="text" required>
-                </div>
-                <div>
-                  <label>CPF/CNPJ</label>
-                  <input name="documento" type="text">
-                </div>
-                <div>
-                  <label>Telefone *</label>
-                  <input name="telefone" type="tel" required>
-                </div>
-                <div>
-                  <label>E-mail</label>
-                  <input name="email" type="email">
-                </div>
-                <div>
-                  <label>Interesse</label>
-                  <select name="interesse">
-                    <option value="Compra">Compra</option>
-                    <option value="Aluguel">Aluguel</option>
-                    <option value="Venda">Venda</option>
-                  </select>
-                </div>
-                <div class="col-full">
-                  <label>Observações</label>
-                  <textarea name="observacoes"></textarea>
-                </div>
-              </div>
-              <div class="actions">
-                <button type="submit" class="btn primary">
-                  <span class="material-icons">person_add</span> Salvar Cliente
-                </button>
-                <button type="button" class="btn ghost" id="btnLimparCliente">
-                  <span class="material-icons">clear</span> Limpar
-                </button>
-              </div>
-            </form>
-          </div>
-          <div class="container">
-            <h2>Clientes Cadastrados</h2>
-            <div id="listaClientes"></div>
-          </div>
-        </section>
-
-        <section id="visitas" class="tab-content">
-          <div class="container">
-            <h2>Agendar Visita</h2>
-            <div id="alertVisitas"></div>
-            <form id="formVisitas">
-              <div class="grid">
-                <div>
-                  <label>Imóvel *</label>
-                  <select name="imovelId" id="selectImovel" required>
-                    <option value="">Selecione um imóvel</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Cliente *</label>
-                  <select name="clienteId" id="selectCliente" required>
-                    <option value="">Selecione um cliente</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Data *</label>
-                  <input name="data" type="date" required>
-                </div>
-                <div>
-                  <label>Horário *</label>
-                  <input name="horario" type="time" required>
-                </div>
-                <div class="col-full">
-                  <label>Observações</label>
-                  <textarea name="observacoes"></textarea>
-                </div>
-              </div>
-              <div class="actions">
-                <button type="submit" class="btn primary">
-                  <span class="material-icons">event</span> Agendar Visita
-                </button>
-                <button type="button" class="btn ghost" id="btnLimparVisita">
-                  <span class="material-icons">clear</span> Limpar
-                </button>
-              </div>
-            </form>
-            <div style="margin-top:20px;">
-                <button class="btn success" onclick="exportarVisitasCSV()">
-                    <span class="material-icons">download</span> Exportar Visitas (CSV)
+                <div class="col-full">
+                  <label>Fotos do Imóvel</label>
+                  <div class="upload-box" id="uploadBoxCadastro">
+                    <span class="material-icons" style="font-size:48px;color:var(--primary);margin-bottom:12px">add_photo_alternate</span>
+                    <p style="font-size:16px;font-weight:600;margin-bottom:8px;color:#0f172a">Clique ou arraste fotos aqui</p>
+                    <p style="font-size:13px;color:var(--muted)">JPG, PNG, GIF (máx. 5MB cada)</p>
+                    <input type="file" id="fileInputCadastro" accept="image/*" multiple style="display:none">
+                  </div>
+                  <div class="preview-grid" id="previewGridCadastro"></div>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="submit" class="btn primary">
+                  <span class="material-icons">save</span> Salvar Imóvel
                 </button>
+                <button type="button" class="btn ghost" id="btnLimparForm">
+                  <span class="material-icons">clear</span> Limpar Formulário
+                </button>
+                <button type="button" class="btn success" id="btnExportPdf">
+                  <span class="material-icons">picture_as_pdf</span> Exportar Ficha (PDF)
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="imoveis" class="tab-content">
+          <div class="container">
+            <h2>Imóveis Cadastrados</h2>
+            <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+              <input type="text" id="searchImoveis" placeholder="Pesquisar imóveis..." style="flex:1;min-width:200px">
+              <button class="btn primary" id="btnRefreshImoveis">
+                <span class="material-icons">refresh</span> Atualizar
+              </button>
+              <button class="btn success" id="btnExportCsv">
+                <span class="material-icons">download</span> Exportar CSV
+              </button>
             </div>
-          </div>
-          <div class="container">
-            <h2>Visitas Agendadas</h2>
-            <div id="listaVisitas"></div>
-          </div>
-        </section>
+            <div id="listaImoveis"></div>
+          </div>
+        </section>
 
-        <section id="ferramentas" class="tab-content">
-          <div class="container">
-            <h2>Ferramentas Úteis</h2>
-            <div class="grid">
-              <div class="container" style="margin:0">
-                <h3 style="font-size:16px;margin-bottom:12px">💰 Simulador de Financiamento</h3>
-                <div style="margin-bottom:10px">
-                  <label>Valor do Imóvel (R$)</label>
-                  <input type="number" id="valorImovel" placeholder="0.00" step="0.01">
-                </div>
-                <div style="margin-bottom:10px">
-                  <label>Entrada (R$)</label>
-                  <input type="number" id="entrada" placeholder="0.00" step="0.01">
-                </div>
-                <div style="margin-bottom:10px">
-                  <label>Taxa de Juros (% ao ano)</label>
-                  <input type="number" id="taxaJuros" placeholder="8.5" step="0.01">
-                </div>
-                <div style="margin-bottom:10px">
-                  <label>Prazo (meses)</label>
-                  <input type="number" id="prazo" placeholder="360">
-                </div>
-                <button class="btn primary" onclick="calcularFinanciamento()">
-                  <span class="material-icons">calculate</span> Calcular
-                </button>
-                <div id="resultadoFinanciamento" style="margin-top:16px;padding:12px;background:rgba(59,130,246,0.05);border-radius:8px;display:none">
-                  <strong>Resultado:</strong>
-                  <div style="margin-top:8px;font-size:14px" id="resultadoTexto"></div>
-                </div>
-              </div>
+        <section id="galeria" class="tab-content">
+          <div class="container">
+            <h2>Galeria de Fotos (<span id="photoCount">0</span> fotos)</h2>
+            <div id="alertGaleria"></div>
+            <input type="text" id="searchGaleria" placeholder="Pesquisar fotos..." style="margin-bottom:16px">
+            <div class="upload-area" id="uploadArea">
+              <span class="material-icons" style="font-size:64px;color:var(--primary);margin-bottom:16px">cloud_upload</span>
+              <h3 style="margin:0 0 8px 0">Adicionar Fotos à Galeria</h3>
+              <p style="color:var(--muted);font-size:14px">Clique ou arraste imagens aqui</p>
+              <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+            </div>
+            <div class="gallery-grid" id="galleryGrid"></div>
+          </div>
+        </section>
 
-              <div class="container" style="margin:0">
-                <h3 style="font-size:16px;margin-bottom:12px">📊 Estatísticas</h3>
-                <div id="estatisticas"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <section id="clientes" class="tab-content">
+          <div class="container">
+            <h2>Cadastro de Clientes</h2>
+            <div id="alertClientes"></div>
+            <form id="formClientes">
+              <div class="grid">
+                <div>
+                  <label>Nome Completo *</label>
+                  <input name="nome" type="text" required>
+                </div>
+                <div>
+                  <label>CPF/CNPJ</label>
+                  <input name="documento" type="text">
+                </div>
+                <div>
+                  <label>Telefone *</label>
+                  <input name="telefone" type="tel" required>
+                </div>
+                <div>
+                  <label>E-mail</label>
+                  <input name="email" type="email">
+                </div>
+                <div>
+                  <label>Interesse</label>
+                  <select name="interesse">
+                    <option value="Compra">Compra</option>
+                    <option value="Aluguel">Aluguel</option>
+                    <option value="Venda">Venda</option>
+                  </select>
+                </div>
+                <div class="col-full">
+                  <label>Observações</label>
+                  <textarea name="observacoes"></textarea>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="submit" class="btn primary">
+                  <span class="material-icons">person_add</span> Salvar Cliente
+                </button>
+                <button type="button" class="btn ghost" id="btnLimparCliente">
+                  <span class="material-icons">clear</span> Limpar
+                </button>
+              </div>
+            </form>
+          </div>
+          <div class="container">
+            <h2>Clientes Cadastrados</h2>
+            <div id="listaClientes"></div>
+          </div>
+        </section>
 
-        <section id="visualizacao" class="tab-content">
-          <div class="property-view-container">
-            <div class="container">
-              <h2 id="propertyViewTitle">Visualização de Imóvel</h2>
-              <div id="propertyViewContent">
-                <p class="no-data">Selecione um imóvel na aba **Imóveis** e clique em **Visualizar Cliente** para carregar esta ficha.</p>
+        <section id="visitas" class="tab-content">
+          <div class="container">
+            <h2>Agendar Visita</h2>
+            <div id="alertVisitas"></div>
+            <form id="formVisitas">
+              <div class="grid">
+                <div>
+                  <label>Imóvel *</label>
+                  <select name="imovelId" id="selectImovel" required>
+                    <option value="">Selecione um imóvel</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Cliente *</label>
+                  <select name="clienteId" id="selectCliente" required>
+                    <option value="">Selecione um cliente</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Data *</label>
+                  <input name="data" type="date" required>
+                </div>
+                <div>
+                  <label>Horário *</label>
+                  <input name="horario" type="time" required>
+                </div>
+                <div class="col-full">
+                  <label>Observações</label>
+                  <textarea name="observacoes"></textarea>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="submit" class="btn primary">
+                  <span class="material-icons">event</span> Agendar Visita
+                </button>
+                <button type="button" class="btn ghost" id="btnLimparVisita">
+                  <span class="material-icons">clear</span> Limpar
+                </button>
+              </div>
+            </form>
+          </div>
+          <div class="container">
+            <h2>Visitas Agendadas</h2>
+            <div id="listaVisitas"></div>
+          </div>
+        </section>
+
+        <section id="ferramentas" class="tab-content">
+          <div class="container">
+            <h2>Ferramentas Úteis</h2>
+            <div class="grid">
+              <div class="container" style="margin:0">
+                <h3 style="font-size:16px;margin-bottom:12px">💰 Simulador de Financiamento</h3>
+                <div style="margin-bottom:10px">
+                  <label>Valor do Imóvel (R$)</label>
+                  <input type="number" id="valorImovel" placeholder="0.00" step="0.01">
+                </div>
+                <div style="margin-bottom:10px">
+                  <label>Entrada (R$)</label>
+                  <input type="number" id="entrada" placeholder="0.00" step="0.01">
+                </div>
+                <div style="margin-bottom:10px">
+                  <label>Taxa de Juros (% ao ano)</label>
+                  <input type="number" id="taxaJuros" placeholder="8.5" step="0.01">
+                </div>
+                <div style="margin-bottom:10px">
+                  <label>Prazo (meses)</label>
+                  <input type="number" id="prazo" placeholder="360">
+                </div>
+                <button class="btn primary" onclick="calcularFinanciamento()">
+                  <span class="material-icons">calculate</span> Calcular
+                </button>
+                <div id="resultadoFinanciamento" style="margin-top:16px;padding:12px;background:rgba(59,130,246,0.05);border-radius:8px;display:none">
+                  <strong>Resultado:</strong>
+                  <div style="margin-top:8px;font-size:14px" id="resultadoTexto"></div>
+                </div>
+              </div>
+
+              <div class="container" style="margin:0">
+                <h3 style="font-size:16px;margin-bottom:12px">📊 Estatísticas</h3>
+                <div id="estatisticas"></div>
               </div>
             </div>
           </div>
         </section>
-              </main>
-    </div>
-  </div>
+      </main>
+    </div>
+  </div>
 
-  <div class="modal" id="editModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Editar Foto</h3>
-        <button class="modal-close">
-          <span class="material-icons">close</span>
-        </button>
-        <input type="hidden" id="modalFotoId">
-      </div>
-      <img id="modalImage" src="" alt="Foto">
-      <div>
-        <label>Valor (R$)</label>
-        <input type="number" id="modalValor" step="0.01" placeholder="Ex: 350000">
-      </div>
-      <div style="margin-top:12px">
-        <label>Descrição</label>
-        <textarea id="modalDescricao" placeholder="Descreva o imóvel..."></textarea>
-      </div>
-      <div class="actions">
-        <button class="btn primary" onclick="salvarEdicao()">
-          <span class="material-icons">save</span> Salvar
-        </button>
-        <button class="btn ghost" onclick="fecharModalEdicao()">
-          Cancelar
-        </button>
-      </div>
-    </div>
-  </div>
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Editar Foto</h3>
+        <button class="modal-close">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <img id="modalImage" src="" alt="Foto">
+      <div>
+        <label>Valor (R$)</label>
+        <input type="number" id="modalValor" step="0.01" placeholder="Ex: 350000">
+      </div>
+      <div style="margin-top:12px">
+        <label>Descrição</label>
+        <textarea id="modalDescricao" placeholder="Descreva o imóvel..."></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="salvarEdicao()">
+          <span class="material-icons">save</span> Salvar
+        </button>
+        <button class="btn ghost" onclick="fecharModalEdicao()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
 
-  <script>
-    const IMOVEIS_KEY = 'imoveis_data';
-    const CLIENTES_KEY = 'clientes_data';
-    const VISITAS_KEY = 'visitas_data';
-    const FOTOS_KEY = 'fotos_data';
+  <script>
+    const IMOVEIS_KEY = 'imoveis_data';
+    const CLIENTES_KEY = 'clientes_data';
+    const VISITAS_KEY = 'visitas_data';
+    const FOTOS_KEY = 'fotos_data';
 
-    function salvar(key, data) {
-      try {
-        localStorage.setItem(key, JSON.stringify(data));
-      } catch (e) {
-        console.error('Erro ao salvar dados:', e);
-        alert('Erro ao salvar dados. Verifique o espaço disponível no navegador.');
-      }
-    }
-
-    function carregar(key) {
-      try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : [];
-      } catch (e) {
-        console.error('Erro ao carregar dados:', e);
-        return [];
-      }
-    }
-
-    let fotosCadastro = [];
-    let fotoEditando = null;
-    let imovelEditandoId = null; // Para edição de imóveis
-    let currentSlideIndex = 0; // Para o carrossel
-
-    function mostrarAlerta(containerId, mensagem, tipo) {
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.innerHTML = `<div class="alert ${tipo}">${mensagem}</div>`;
-        setTimeout(() => {
-          container.innerHTML = '';
-        }, 5000);
-      }
-    }
-
-    function formatarMoeda(valor) {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-      }).format(valor);
-    }
-
-    function gerarIdUnico() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    }
-
-    function getBadge(status) {
-      return `<span class="status-badge status-${status.toLowerCase().replace(/[^a-z0-9]/g, '')}">${status}</span>`;
-    }
-
-    const pageTitles = {
-      'cadastro': 'Cadastro de Imóvel',
-      'imoveis': 'Imóveis Cadastrados',
-      'galeria': 'Galeria de Fotos',
-      'clientes': 'Clientes',
-      'visitas': 'Visitas Agendadas',
-      'ferramentas': 'Ferramentas',
-      'visualizacao': 'Visualização Cliente'
-    };
-
-    function trocarAba(tabId) {
-      document.querySelectorAll('.nav-btn').forEach(b => {
-        b.classList.remove('active');
-      });
-
-      const btnAtivo = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
-      if (btnAtivo) {
-        btnAtivo.classList.add('active');
-      }
-
-      document.querySelectorAll('.tab-content').forEach(t => {
-        t.classList.remove('active');
-      });
-
-      const abaAtiva = document.getElementById(tabId);
-      if (abaAtiva) {
-        abaAtiva.classList.add('active');
-        document.getElementById('pageTitle').textContent = pageTitles[tabId];
-        switch(tabId) {
-          case 'imoveis':
-            listarImoveis();
-            break;
-          case 'galeria':
-            listarFotos();
-            break;
-          case 'clientes':
-            listarClientes();
-            break;
-          case 'visitas':
-            preencherSelectsVisitas();
-            listarVisitas();
-            break;
-            case 'ferramentas':
-                calcularEstatisticas();
-                break;
-            case 'cadastro':
-                limparFormulario();
-                break;
-            case 'visualizacao':
-                // Nenhuma ação. Espera o clique no botão "Visualizar Cliente"
-                break;
-        }
-      }
-    }
-
-    // --- LÓGICA DO CARROSSEL ---
-
-    function nextSlide(imovelId) {
-        const track = document.getElementById(`carouselTrack-${imovelId}`);
-        if (!track) return;
-        const slides = track.children.length;
-        currentSlideIndex = (currentSlideIndex + 1) % slides;
-        track.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
-        updateCaption(imovelId);
+    function salvar(key, data) {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {
+        console.error('Erro ao salvar dados:', e);
+        alert('Erro ao salvar dados. Verifique o espaço disponível no navegador.');
+      }
     }
 
-    function prevSlide(imovelId) {
-        const track = document.getElementById(`carouselTrack-${imovelId}`);
-        if (!track) return;
-        const slides = track.children.length;
-        // Garante que o índice não seja negativo
-        currentSlideIndex = (currentSlideIndex - 1 + slides) % slides;
-        track.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
-        updateCaption(imovelId);
+    function carregar(key) {
+      try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        console.error('Erro ao carregar dados:', e);
+        return [];
+      }
     }
 
-    function updateCaption(imovelId) {
-        const imovel = carregar(IMOVEIS_KEY).find(i => i.id === imovelId);
-        if (!imovel || !imovel.fotos || imovel.fotos.length === 0) return;
-        
-        const captionElement = document.getElementById(`carouselCaptionText-${imovelId}`);
-        if (captionElement) {
-            const fotoInfo = imovel.fotos[currentSlideIndex];
-            // Se tiver descrição, usa ela. Senão, usa um texto padrão.
-            const preco = fotoInfo.valor ? formatarMoeda(fotoInfo.valor) : 'Preço não especificado';
-            const legenda = fotoInfo.descricao || `${imovel.tipo} - ${imovel.endereco.split(',')[0].trim()}`;
-            captionElement.innerHTML = `<strong>${preco}</strong><br>${legenda}`;
-        }
+    let fotosCadastro = [];
+    let fotoEditando = null;
+
+    function mostrarAlerta(containerId, mensagem, tipo) {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = `<div class="alert ${tipo}">${mensagem}</div>`;
+        setTimeout(() => {
+          container.innerHTML = '';
+        }, 5000);
+      }
     }
 
-    // --- FUNÇÃO DE VISUALIZAÇÃO DE CLIENTE ---
-
-    function carregarVisualizacaoCliente(imovelId) {
-        const imoveis = carregar(IMOVEIS_KEY);
-        const imovel = imoveis.find(i => i.id === imovelId);
-        const contentDiv = document.getElementById('propertyViewContent');
-        
-        if (!imovel) {
-            contentDiv.innerHTML = '<p class="no-data">Imóvel não encontrado.</p>';
-            trocarAba('visualizacao');
-            return;
-        }
-        
-        currentSlideIndex = 0; // Resetar o carrossel ao carregar um novo imóvel
-        
-        let carouselHTML = '';
-        
-        if (imovel.fotos && imovel.fotos.length > 0) {
-            const slidesHTML = imovel.fotos.map((foto) => {
-                return `
-                    <div class="carousel-slide">
-                        <img src="${foto.url}" alt="${imovel.tipo} em ${imovel.endereco}">
-                    </div>
-                `;
-            }).join('');
-            
-            carouselHTML = `
-                <div class="carousel-container">
-                    <div class="carousel-track" id="carouselTrack-${imovelId}" style="width: ${imovel.fotos.length * 100}%;">
-                        ${slidesHTML}
-                    </div>
-                    <div class="carousel-caption">
-                        <span id="carouselCaptionText-${imovelId}"></span>
-                    </div>
-                    ${imovel.fotos.length > 1 ? `
-                        <button class="carousel-nav-btn prev" onclick="prevSlide('${imovelId}')">
-                            <span class="material-icons">chevron_left</span>
-                        </button>
-                        <button class="carousel-nav-btn next" onclick="nextSlide('${imovelId}')">
-                            <span class="material-icons">chevron_right</span>
-                        </button>
-                    ` : ''}
-                </div>
-            `;
-        } else {
-            carouselHTML = `
-                <div class="alert error">
-                    <span class="material-icons" style="vertical-align: middle;">warning</span>
-                    Este imóvel não possui fotos cadastradas.
-                </div>
-            `;
-        }
-        
-        const enderecoCurto = imovel.endereco.split(',')[0].trim();
-        
-        contentDiv.innerHTML = `
-            ${carouselHTML}
-            
-            <div class="container" style="margin-bottom: 20px;">
-                <h3 style="font-size: 24px; margin-bottom: 8px;">${imovel.tipo} ${imovel.finalidade.includes('Venda') ? 'à Venda' : 'para Alugar'}</h3>
-                <p style="font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">
-                    ${formatarMoeda(imovel.valor)} ${imovel.finalidade.includes('Aluguel') ? '/ Mês' : ''}
-                </p>
-                <p style="font-size: 16px; color: #0f172a; margin-bottom: 20px;">
-                    <span class="material-icons" style="font-size: 18px; vertical-align: middle;">location_on</span>
-                    ${imovel.endereco}
-                </p>
-                
-                <h4 style="font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(15, 23, 42, 0.1);">Detalhes Principais</h4>
-                <div class="property-details">
-                    <div class="detail-item"><strong>Tipo:</strong> <span>${imovel.tipo}</span></div>
-                    <div class="detail-item"><strong>Área:</strong> <span>${imovel.area ? imovel.area + ' m²' : 'N/A'}</span></div>
-                    <div class="detail-item"><strong>Quartos:</strong> <span>${imovel.quartos || 0}</span></div>
-                    <div class="detail-item"><strong>Banheiros:</strong> <span>${imovel.banheiros || 0}</span></div>
-                    <div class="detail-item"><strong>Vagas:</strong> <span>${imovel.vagas || 0}</span></div>
-                    ${imovel.condominio ? `<div class="detail-item"><strong>Condomínio:</strong> <span>${formatarMoeda(imovel.condominio)}</span></div>` : ''}
-                </div>
-
-                ${imovel.observacoes ? `
-                    <h4 style="font-size: 18px; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid rgba(15, 23, 42, 0.1);">Descrição</h4>
-                    <p style="font-size: 15px; color: #0f172a; line-height: 1.6;">${imovel.observacoes}</p>
-                ` : ''}
-
-                <div class="actions">
-                    <button class="btn success" onclick="window.print()">
-                        <span class="material-icons">print</span> Imprimir Ficha
-                    </button>
-                    <button class="btn primary" onclick="alert('Solicitação de Visita para o imóvel ${enderecoCurto} enviada! (Simulação)')">
-                        <span class="material-icons">event_available</span> Agendar Visita
-                    </button>
-                </div>
-            </div>
-        `;
-
-        trocarAba('visualizacao');
-
-        // Adiciona as imagens para impressão (ocultas na tela, exceto em @media print)
-        if (imovel.fotos && imovel.fotos.length > 0) {
-            const printImagesHTML = imovel.fotos.map((foto, index) => {
-                const fotoPreco = foto.valor ? formatarMoeda(foto.valor) : 'Preço não especificado';
-                const fotoDesc = foto.descricao || `Foto ${index + 1}`;
-                return `
-                    <div style="display:none;" class="print-only">
-                        <img src="${foto.url}" alt="${fotoDesc}">
-                        <p style="text-align:center; margin-top:-10px; margin-bottom: 30px; font-size: 14px; color: #333;">${fotoDesc} - ${fotoPreco}</p>
-                    </div>
-                `;
-            }).join('');
-            contentDiv.innerHTML += printImagesHTML;
-        }
-        
-        if (imovel.fotos && imovel.fotos.length > 0) {
-            updateCaption(imovelId); // Define a legenda da primeira imagem
-        }
+    function formatarMoeda(valor) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+      }).format(valor);
     }
 
-    // --- CADASTRO DE IMÓVEIS ---
-
-    function setupDragAndDrop(uploadBoxId, fileInputId, previewGridId, fotoList) {
-        const uploadBox = document.getElementById(uploadBoxId);
-        const fileInput = document.getElementById(fileInputId);
-        const previewGrid = document.getElementById(previewGridId);
-
-        uploadBox.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files, fotoList, previewGrid);
-        });
-
-        uploadBox.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadBox.classList.add('dragover');
-        });
-
-        uploadBox.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadBox.classList.remove('dragover');
-        });
-
-        uploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadBox.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files, fotoList, previewGrid);
-        });
+    function gerarIdUnico() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     }
 
-    function handleFiles(files, fotoList, previewGrid) {
-        Array.from(files).forEach(file => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const newFoto = {
-                        id: gerarIdUnico(),
-                        url: e.target.result,
-                        descricao: '',
-                        valor: null
-                    };
-                    fotoList.push(newFoto);
-                    renderPreview(fotoList, previewGrid);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+    function getBadge(status) {
+      return `<span class="status-badge status-${status.toLowerCase().replace(/[^a-z0-9]/g, '')}">${status}</span>`;
     }
 
-    function renderPreview(fotoList, previewGrid) {
-        previewGrid.innerHTML = '';
-        fotoList.forEach((foto, index) => {
-            const item = document.createElement('div');
-            item.className = 'preview-item';
-            item.innerHTML = `
-                <img src="${foto.url}" alt="Prévia da foto ${index + 1}">
-                <button class="remove-btn" onclick="removerFotoCadastro('${foto.id}')">
-                    <span class="material-icons" style="font-size:16px">close</span>
-                </button>
-            `;
-            previewGrid.appendChild(item);
-        });
-    }
+    const pageTitles = {
+      'cadastro': 'Cadastro de Imóvel',
+      'imoveis': 'Imóveis Cadastrados',
+      'galeria': 'Galeria de Fotos',
+      'clientes': 'Clientes',
+      'visitas': 'Visitas Agendadas',
+      'ferramentas': 'Ferramentas'
+    };
 
-    function removerFotoCadastro(fotoId) {
-        fotosCadastro = fotosCadastro.filter(foto => foto.id !== fotoId);
-        renderPreview(fotosCadastro, document.getElementById('previewGridCadastro'));
-    }
+    function trocarAba(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('active');
+      });
 
-    function processarCadastroImovel(event) {
-        event.preventDefault();
-        const form = event.target;
-        const imovel = {
-            id: imovelEditandoId || gerarIdUnico(),
-            tipo: form.tipo.value,
-            finalidade: form.finalidade.value,
-            endereco: form.endereco.value,
-            cep: form.cep.value,
-            area: parseFloat(form.area.value) || null,
-            quartos: parseInt(form.quartos.value) || null,
-            banheiros: parseInt(form.banheiros.value) || null,
-            vagas: parseInt(form.vagas.value) || null,
-            valor: parseFloat(form.valor.value),
-            condominio: parseFloat(form.condominio.value) || null,
-            iptu: parseFloat(form.iptu.value) || null,
-            status: form.status.value,
-            proprietario: form.proprietario.value,
-            observacoes: form.observacoes.value,
-            fotos: fotosCadastro
-        };
+      const btnAtivo = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+      if (btnAtivo) {
+        btnAtivo.classList.add('active');
+      }
 
-        let imoveis = carregar(IMOVEIS_KEY);
+      document.querySelectorAll('.tab-content').forEach(t => {
+        t.classList.remove('active');
+      });
 
-        if (imovelEditandoId) {
-            const index = imoveis.findIndex(i => i.id === imovelEditandoId);
-            if (index !== -1) {
-                imoveis[index] = imovel;
-                mostrarAlerta('alertCadastro', 'Imóvel atualizado com sucesso!', 'success');
-            }
-        } else {
-            imoveis.push(imovel);
-            mostrarAlerta('alertCadastro', 'Imóvel cadastrado com sucesso!', 'success');
-        }
-
-        salvar(IMOVEIS_KEY, imoveis);
-        limparFormulario();
-        imovelEditandoId = null;
-    }
-
-    function limparFormulario() {
-        document.getElementById('formCadastro').reset();
-        fotosCadastro = [];
-        renderPreview(fotosCadastro, document.getElementById('previewGridCadastro'));
-        imovelEditandoId = null;
-        document.querySelector('.btn.primary').innerHTML = '<span class="material-icons">save</span> Salvar Imóvel';
-        document.getElementById('pageTitle').textContent = pageTitles.cadastro;
-    }
-
-    function abrirEdicaoImovel(id) {
-        const imoveis = carregar(IMOVEIS_KEY);
-        const imovel = imoveis.find(i => i.id === id);
-
-        if (imovel) {
-            imovelEditandoId = id;
-            const form = document.getElementById('formCadastro');
-            form.tipo.value = imovel.tipo;
-            form.finalidade.value = imovel.finalidade;
-            form.endereco.value = imovel.endereco;
-            form.cep.value = imovel.cep || '';
-            form.area.value = imovel.area || '';
-            form.quartos.value = imovel.quartos || '';
-            form.banheiros.value = imovel.banheiros || '';
-            form.vagas.value = imovel.vagas || '';
-            form.valor.value = imovel.valor;
-            form.condominio.value = imovel.condominio || '';
-            form.iptu.value = imovel.iptu || '';
-            form.status.value = imovel.status;
-            form.proprietario.value = imovel.proprietario || '';
-            form.observacoes.value = imovel.observacoes || '';
-
-            fotosCadastro = imovel.fotos || [];
-            renderPreview(fotosCadastro, document.getElementById('previewGridCadastro'));
-
-            document.querySelector('.btn.primary').innerHTML = '<span class="material-icons">update</span> Atualizar Imóvel';
-            document.getElementById('pageTitle').textContent = 'Edição de Imóvel';
-            trocarAba('cadastro');
-        } else {
-            alert('Imóvel não encontrado.');
-        }
-    }
-
-    function deletarImovel(id) {
-        if (confirm('Tem certeza que deseja deletar este imóvel?')) {
-            let imoveis = carregar(IMOVEIS_KEY);
-            imoveis = imoveis.filter(i => i.id !== id);
-            salvar(IMOVEIS_KEY, imoveis);
+      const abaAtiva = document.getElementById(tabId);
+      if (abaAtiva) {
+        abaAtiva.classList.add('active');
+        switch(tabId) {
+          case 'imoveis':
             listarImoveis();
-            calcularEstatisticas();
+            break;
+          case 'galeria':
+            listarFotos();
+            break;
+          case 'clientes':
+            listarClientes();
+            break;
+          case 'visitas':
+            preencherSelectsVisitas();
+            listarVisitas();
+            break;
+          case 'ferramentas':
+            atualizarEstatisticas();
+            break;
+          default:
+            break;
         }
+      }
+      document.getElementById('pageTitle').textContent = pageTitles[tabId] || 'Sistema Imobiliário';
     }
 
-    function listarImoveis(termoPesquisa = '') {
-        let imoveis = carregar(IMOVEIS_KEY);
-        const listaDiv = document.getElementById('listaImoveis');
-        listaDiv.innerHTML = '';
-        
-        if (termoPesquisa) {
-            const termo = termoPesquisa.toLowerCase();
-            imoveis = imoveis.filter(i => 
-                i.endereco.toLowerCase().includes(termo) ||
-                i.tipo.toLowerCase().includes(termo) ||
-                (i.proprietario && i.proprietario.toLowerCase().includes(termo))
-            );
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.nav-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tab = e.currentTarget.getAttribute('data-tab');
+          trocarAba(tab);
+        });
+      });
 
-        if (imoveis.length === 0) {
-            listaDiv.innerHTML = '<p class="no-data">Nenhum imóvel cadastrado ou encontrado.</p>';
-            return;
-        }
+      trocarAba('cadastro');
+    });
 
-        let tableHTML = `
-            <table class="table-auto">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Endereço</th>
-                        <th>Tipo/Finalidade</th>
-                        <th>Valor (R$)</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
+    document.getElementById('formCadastro').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const imovel = {
+        id: gerarIdUnico(),
+        dataCadastro: new Date().toISOString().split('T')[0],
+        tipo: form.tipo.value,
+        finalidade: form.finalidade.value,
+        endereco: form.endereco.value,
+        cep: form.cep.value,
+        area: parseFloat(form.area.value) || 0,
+        quartos: parseInt(form.quartos.value) || 0,
+        banheiros: parseInt(form.banheiros.value) || 0,
+        vagas: parseInt(form.vagas.value) || 0,
+        valor: parseFloat(form.valor.value) || 0,
+        condominio: parseFloat(form.condominio.value) || 0,
+        iptu: parseFloat(form.iptu.value) || 0,
+        status: form.status.value,
+        proprietario: form.proprietario.value,
+        observacoes: form.observacoes.value,
+        fotos: fotosCadastro
+      };
+      const imoveis = carregar(IMOVEIS_KEY);
+      imoveis.push(imovel);
+      salvar(IMOVEIS_KEY, imoveis);
+
+      let fotosExistentes = carregar(FOTOS_KEY);
+      fotosCadastro.forEach(f => {
+        fotosExistentes.push({
+          id: f.id,
+          dataUrl: f.dataUrl,
+          valor: imovel.valor,
+          descricao: `${imovel.tipo} - ${imovel.endereco}`,
+          imovelId: imovel.id
+        });
+      });
+      salvar(FOTOS_KEY, fotosExistentes);
+
+      mostrarAlerta('alertCadastro', 'Imóvel salvo com sucesso!', 'success');
+      form.reset();
+      fotosCadastro = [];
+      renderPreviewCadastro();
+    });
+
+    document.getElementById('btnLimparForm').addEventListener('click', function() {
+      document.getElementById('formCadastro').reset();
+      fotosCadastro = [];
+      renderPreviewCadastro();
+      document.getElementById('alertCadastro').innerHTML = '';
+    });
+
+    function listarImoveis(filtro = '') {
+      const imoveis = carregar(IMOVEIS_KEY);
+      const listaDiv = document.getElementById('listaImoveis');
+      listaDiv.innerHTML = '';
+
+      const imoveisFiltrados = imoveis.filter(i => 
+        Object.values(i).some(val => 
+          String(val).toLowerCase().includes(filtro.toLowerCase())
+        )
+      );
+
+      if (imoveisFiltrados.length === 0) {
+        listaDiv.innerHTML = '<div class="no-data">Nenhum imóvel encontrado.</div>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Endereço</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      imoveisFiltrados.forEach(imovel => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${imovel.tipo} (${imovel.finalidade})</td>
+          <td>${imovel.endereco}</td>
+          <td>${formatarMoeda(imovel.valor)}</td>
+          <td>${getBadge(imovel.status)}</td>
+          <td>
+            <button class="btn danger" onclick="deletarImovel('${imovel.id}')">
+              <span class="material-icons" style="font-size:16px">delete</span>
+            </button>
+          </td>
         `;
-
-        imoveis.forEach(imovel => {
-            const enderecoCurto = imovel.endereco.split(',')[0].trim();
-            tableHTML += `
-                <tr>
-                    <td>${imovel.id.substring(0, 6)}...</td>
-                    <td>${enderecoCurto}</td>
-                    <td>${imovel.tipo} (${imovel.finalidade})</td>
-                    <td>${formatarMoeda(imovel.valor)}</td>
-                    <td>${getBadge(imovel.status)}</td>
-                    <td>
-                        <button class="btn primary" onclick="abrirEdicaoImovel('${imovel.id}')">
-                            <span class="material-icons" style="font-size:16px">edit</span> Editar
-                        </button>
-                        <button class="btn danger" onclick="deletarImovel('${imovel.id}')" style="margin-left:8px">
-                            <span class="material-icons" style="font-size:16px">delete</span>
-                        </button>
-                        <button class="btn success" style="margin-left:8px" onclick="carregarVisualizacaoCliente('${imovel.id}')">
-                            <span class="material-icons" style="font-size:16px">visibility</span> Cliente
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableHTML += '</tbody></table>';
-        listaDiv.innerHTML = tableHTML;
+        tbody.appendChild(tr);
+      });
+      listaDiv.appendChild(table);
     }
 
-    function exportarCsv() {
-        const imoveis = carregar(IMOVEIS_KEY);
-        if (imoveis.length === 0) {
-            alert('Não há imóveis para exportar.');
-            return;
-        }
+    window.deletarImovel = function(id) {
+      if (confirm('Tem certeza que deseja deletar este imóvel?')) {
+        let imoveis = carregar(IMOVEIS_KEY);
+        imoveis = imoveis.filter(i => i.id !== id);
+        salvar(IMOVEIS_KEY, imoveis);
 
-        const headers = ["ID", "Tipo", "Finalidade", "Endereço", "CEP", "Área (m²)", "Quartos", "Banheiros", "Vagas", "Valor", "Condomínio", "IPTU", "Status", "Proprietário", "Observações", "Fotos Count"];
-        let csv = headers.join(";") + "\n";
+        let fotos = carregar(FOTOS_KEY);
+        fotos = fotos.filter(f => f.imovelId !== id);
+        salvar(FOTOS_KEY, fotos);
 
-        imoveis.forEach(i => {
-            const row = [
-                i.id,
-                i.tipo,
-                i.finalidade,
-                `"${i.endereco.replace(/"/g, '""')}"`,
-                i.cep || '',
-                i.area || '',
-                i.quartos || '',
-                i.banheiros || '',
-                i.vagas || '',
-                (i.valor || 0).toFixed(2).replace('.', ','),
-                (i.condominio || 0).toFixed(2).replace('.', ','),
-                (i.iptu || 0).toFixed(2).replace('.', ','),
-                i.status,
-                `"${(i.proprietario || '').replace(/"/g, '""')}"`,
-                `"${(i.observacoes || '').replace(/"/g, '""')}"`,
-                (i.fotos || []).length
-            ].join(";");
-            csv += row + "\n";
-        });
+        let visitas = carregar(VISITAS_KEY);
+        visitas = visitas.filter(v => v.imovelId !== id);
+        salvar(VISITAS_KEY, visitas);
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "imoveis_export.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        listarImoveis();
+        mostrarAlerta('listaImoveis', 'Imóvel e dados associados deletados.', 'error');
+      }
     }
 
-    function exportarFichaPdf() {
-        const form = document.getElementById('formCadastro');
-        const imovel = {
-            tipo: form.tipo.value,
-            finalidade: form.finalidade.value,
-            endereco: form.endereco.value,
-            valor: parseFloat(form.valor.value) || 0,
-            area: parseFloat(form.area.value) || null,
-            quartos: parseInt(form.quartos.value) || null,
-            banheiros: parseInt(form.banheiros.value) || null,
-            vagas: parseInt(form.vagas.value) || null,
-            observacoes: form.observacoes.value,
-            fotos: fotosCadastro
-        };
+    document.getElementById('searchImoveis').addEventListener('input', function(e) {
+      listarImoveis(e.target.value);
+    });
+    document.getElementById('btnRefreshImoveis').addEventListener('click', () => listarImoveis());
 
-        if (!imovel.tipo || !imovel.endereco || !imovel.valor) {
-            mostrarAlerta('alertCadastro', 'Preencha pelo menos Tipo, Endereço e Valor para gerar a ficha.', 'error');
-            return;
+    document.getElementById('btnExportCsv').addEventListener('click', function() {
+      const imoveis = carregar(IMOVEIS_KEY);
+      if (imoveis.length === 0) {
+        alert('Nenhum dado para exportar.');
+        return;
+      }
+      const headers = Object.keys(imoveis[0]).join(',');
+      const rows = imoveis.map(i => Object.values(i).map(v => 
+          (typeof v === 'string' && v.includes(',')) ? `"${v}"` : v
+      ).join(','));
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", "imoveis_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      mostrarAlerta('listaImoveis', 'Dados exportados para CSV com sucesso!', 'success');
+    });
+
+    document.getElementById('btnExportPdf').addEventListener('click', function() {
+      const form = document.getElementById('formCadastro');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const doc = new window.jspdf.jsPDF();
+      doc.setFontSize(16);
+      doc.text('Ficha de Cadastro de Imovel', 10, 10);
+      doc.setFontSize(10);
+      let y = 20;
+      const formData = new FormData(form);
+      for (const pair of formData.entries()) {
+        doc.text(`${pair[0]}: ${pair[1]}`, 10, y);
+        y += 7;
+      }
+      doc.save('ficha_imovel.pdf');
+      mostrarAlerta('alertCadastro', 'Ficha exportada para PDF!', 'success');
+    });
+
+    const uploadBoxCadastro = document.getElementById('uploadBoxCadastro');
+    const fileInputCadastro = document.getElementById('fileInputCadastro');
+    const previewGridCadastro = document.getElementById('previewGridCadastro');
+
+    uploadBoxCadastro.addEventListener('click', () => fileInputCadastro.click());
+    uploadBoxCadastro.addEventListener('dragover', (e) => { e.preventDefault(); uploadBoxCadastro.classList.add('dragover'); });
+    uploadBoxCadastro.addEventListener('dragleave', () => uploadBoxCadastro.classList.remove('dragover'));
+    uploadBoxCadastro.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadBoxCadastro.classList.remove('dragover');
+      handleFilesCadastro(e.dataTransfer.files);
+    });
+    fileInputCadastro.addEventListener('change', (e) => {
+      handleFilesCadastro(e.target.files);
+      e.target.value = '';
+    });
+
+    function handleFilesCadastro(files) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            fotosCadastro.push({
+              id: gerarIdUnico(),
+              dataUrl: e.target.result
+            });
+            renderPreviewCadastro();
+          };
+          reader.readAsDataURL(file);
         }
+      });
+    }
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let y = 15;
-        const margin = 15;
-        const pageWidth = doc.internal.pageSize.getWidth();
+    function removerFotoCadastro(id) {
+      fotosCadastro = fotosCadastro.filter(f => f.id !== id);
+      renderPreviewCadastro();
+    }
 
-        // Título Principal
-        doc.setFontSize(18);
-        doc.setTextColor(59, 130, 246);
-        doc.text(`Ficha de Imóvel: ${imovel.tipo} (${imovel.finalidade})`, margin, y);
-        y += 10;
+    function renderPreviewCadastro() {
+      previewGridCadastro.innerHTML = '';
+      fotosCadastro.forEach(foto => {
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `
+          <img src="${foto.dataUrl}" alt="Preview">
+          <button type="button" class="remove-btn" onclick="removerFotoCadastro('${foto.id}')">
+            <span class="material-icons" style="font-size:16px">close</span>
+          </button>
+        `;
+        previewGridCadastro.appendChild(div);
+      });
+    }
+    renderPreviewCadastro();
 
-        // Valor
-        doc.setFontSize(14);
-        doc.setTextColor(30, 50, 90);
-        doc.text(`Valor: ${formatarMoeda(imovel.valor)}`, margin, y);
-        y += 8;
+    const uploadAreaGaleria = document.getElementById('uploadArea');
+    const fileInputGaleria = document.getElementById('fileInput');
+    const galleryGrid = document.getElementById('galleryGrid');
+    const photoCountSpan = document.getElementById('photoCount');
 
-        // Endereço e Detalhes
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Endereço: ${imovel.endereco}`, margin, y);
-        y += 5;
-        doc.text(`Área: ${imovel.area || 'N/A'} m² | Quartos: ${imovel.quartos || 'N/A'} | Banheiros: ${imovel.banheiros || 'N/A'} | Vagas: ${imovel.vagas || 'N/A'}`, margin, y);
-        y += 10;
+    uploadAreaGaleria.addEventListener('click', () => fileInputGaleria.click());
+    uploadAreaGaleria.addEventListener('dragover', (e) => { e.preventDefault(); uploadAreaGaleria.classList.add('dragover'); });
+    uploadAreaGaleria.addEventListener('dragleave', () => uploadAreaGaleria.classList.remove('dragover'));
+    uploadAreaGaleria.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadAreaGaleria.classList.remove('dragover');
+      handleFilesGaleria(e.dataTransfer.files);
+    });
+    fileInputGaleria.addEventListener('change', (e) => {
+      handleFilesGaleria(e.target.files);
+      e.target.value = '';
+    });
 
-        // Observações
-        if (imovel.observacoes) {
-            doc.setFontSize(12);
-            doc.setTextColor(30, 50, 90);
-            doc.text('Características / Observações:', margin, y);
-            y += 5;
-            doc.setFontSize(10);
-            doc.setTextColor(50, 50, 50);
-            const splitText = doc.splitTextToSize(imovel.observacoes, pageWidth - (2 * margin));
-            doc.text(splitText, margin, y);
-            y += (splitText.length * 5) + 5;
-        }
-
-        // Fotos
-        doc.setFontSize(12);
-        doc.setTextColor(30, 50, 90);
-        doc.text('Fotos (Apenas a primeira):', margin, y);
-        y += 5;
-
-        if (imovel.fotos && imovel.fotos.length > 0) {
-            const img = imovel.fotos[0].url;
-            const imgWidth = pageWidth - (2 * margin);
-            const imgHeight = imgWidth * 0.5625; // Proporção 16:9
-
-            if (y + imgHeight > doc.internal.pageSize.getHeight() - 10) {
-                doc.addPage();
-                y = 15;
+    function handleFilesGaleria(files) {
+      let count = 0;
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            let fotos = carregar(FOTOS_KEY);
+            fotos.push({
+              id: gerarIdUnico(),
+              dataUrl: e.target.result,
+              valor: 0,
+              descricao: 'Nova foto na galeria',
+              imovelId: null
+            });
+            salvar(FOTOS_KEY, fotos);
+            count++;
+            if (count === files.length) {
+              listarFotos();
+              mostrarAlerta('alertGaleria', `${count} foto(s) carregada(s) com sucesso.`, 'success');
             }
-
-            doc.addImage(img, 'JPEG', margin, y, imgWidth, imgHeight);
-            y += imgHeight + 10;
-        } else {
-            doc.setFontSize(10);
-            doc.setTextColor(150, 0, 0);
-            doc.text('Nenhuma foto anexada.', margin, y);
-            y += 10;
+          };
+          reader.readAsDataURL(file);
         }
-
-        doc.save(`ficha_imovel_${imovel.tipo}_${imovel.endereco.substring(0, 10)}.pdf`);
+      });
     }
 
-    // --- GALERIA ---
+    function listarFotos(filtro = '') {
+      const fotos = carregar(FOTOS_KEY);
+      galleryGrid.innerHTML = '';
+      photoCountSpan.textContent = fotos.length;
 
-    function listarFotos() {
-        const imoveis = carregar(IMOVEIS_KEY);
-        let allPhotos = [];
-        imoveis.forEach(imovel => {
-            if (imovel.fotos) {
-                imovel.fotos.forEach(foto => {
-                    allPhotos.push({
-                        ...foto,
-                        imovelId: imovel.id,
-                        imovelEndereco: imovel.endereco.split(',')[0].trim()
-                    });
-                });
-            }
-        });
-        
-        const photoCountElement = document.getElementById('photoCount');
-        photoCountElement.textContent = allPhotos.length;
+      const fotosFiltradas = fotos.filter(f => 
+        Object.values(f).some(val => 
+          String(val).toLowerCase().includes(filtro.toLowerCase())
+        )
+      );
 
-        const galleryGrid = document.getElementById('galleryGrid');
-        galleryGrid.innerHTML = '';
+      if (fotosFiltradas.length === 0) {
+        galleryGrid.innerHTML = '<div class="col-full no-data">Nenhuma foto na galeria.</div>';
+        return;
+      }
 
-        if (allPhotos.length === 0) {
-            galleryGrid.innerHTML = '<p class="no-data">Nenhuma foto na galeria.</p>';
-            return;
-        }
-
-        allPhotos.forEach(foto => {
-            const card = document.createElement('div');
-            card.className = 'photo-card';
-            card.innerHTML = `
-                <img src="${foto.url}" alt="Foto do imóvel ${foto.imovelEndereco}">
-                <div class="photo-info">
-                    <div class="price">${foto.valor ? formatarMoeda(foto.valor) : 'N/A'}</div>
-                    <p class="description">${foto.descricao || 'Sem descrição'}</p>
-                    <p style="font-size:12px;color:var(--primary);font-weight:600;">Imóvel: ${foto.imovelEndereco}</p>
-                </div>
-                <div class="photo-actions">
-                    <button class="btn primary" onclick="abrirModalEdicao('${foto.imovelId}', '${foto.id}')">
-                        <span class="material-icons" style="font-size:16px">edit</span> Editar
-                    </button>
-                    <button class="btn danger" onclick="deletarFoto('${foto.imovelId}', '${foto.id}')">
-                        <span class="material-icons" style="font-size:16px">delete</span>
-                    </button>
-                </div>
-            `;
-            galleryGrid.appendChild(card);
-        });
+      fotosFiltradas.forEach(foto => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = `
+          <img src="${foto.dataUrl}" alt="Foto ${foto.id}">
+          <div class="photo-info">
+            <div class="price">${formatarMoeda(foto.valor)}</div>
+            <div class="description">${foto.descricao}</div>
+          </div>
+          <div class="photo-actions">
+            <button class="btn primary" onclick="abrirModalEdicao('${foto.id}')">
+              <span class="material-icons" style="font-size:16px">edit</span> Editar
+            </button>
+            <button class="btn danger" onclick="deletarFotoGaleria('${foto.id}')">
+              <span class="material-icons" style="font-size:16px">delete</span>
+            </button>
+          </div>
+        `;
+        galleryGrid.appendChild(card);
+      });
     }
 
-    // --- FUNÇÕES DE EDIÇÃO DE FOTO (MODAL) ---
+    window.deletarFotoGaleria = function(id) {
+      if (confirm('Tem certeza que deseja deletar esta foto?')) {
+        let fotos = carregar(FOTOS_KEY);
+        fotos = fotos.filter(f => f.id !== id);
+        salvar(FOTOS_KEY, fotos);
+        listarFotos();
+        mostrarAlerta('alertGaleria', 'Foto deletada com sucesso.', 'error');
+      }
+    }
 
-    function abrirModalEdicao(imovelId, fotoId) {
-        const imoveis = carregar(IMOVEIS_KEY);
-        const imovel = imoveis.find(i => i.id === imovelId);
-        const foto = imovel ? imovel.fotos.find(f => f.id === fotoId) : null;
+    document.getElementById('searchGaleria').addEventListener('input', function(e) {
+      listarFotos(e.target.value);
+    });
 
-        if (foto) {
-            document.getElementById('modalImage').src = foto.url;
-            document.getElementById('modalValor').value = foto.valor || '';
-            document.getElementById('modalDescricao').value = foto.descricao || '';
-            document.getElementById('modalFotoId').value = `${imovelId}|${fotoId}`; // Armazena ambos IDs
-            document.getElementById('editModal').classList.add('active');
-        } else {
-            alert('Foto não encontrada.');
-        }
+    const editModal = document.getElementById('editModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalValor = document.getElementById('modalValor');
+    const modalDescricao = document.getElementById('modalDescricao');
+
+    window.abrirModalEdicao = function(id) {
+      const fotos = carregar(FOTOS_KEY);
+      fotoEditando = fotos.find(f => f.id === id);
+      if (fotoEditando) {
+        modalImage.src = fotoEditando.dataUrl;
+        modalValor.value = fotoEditando.valor;
+        modalDescricao.value = fotoEditando.descricao;
+        editModal.classList.add('active');
+      }
     }
 
     function fecharModalEdicao() {
-        document.getElementById('editModal').classList.remove('active');
+      editModal.classList.remove('active');
+      fotoEditando = null;
     }
 
-    function salvarEdicao() {
-        const idParts = document.getElementById('modalFotoId').value.split('|');
-        if (idParts.length !== 2) return;
-        const [imovelId, fotoId] = idParts;
+    document.querySelector('#editModal .modal-close').addEventListener('click', fecharModalEdicao);
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) fecharModalEdicao();
+    });
 
-        let imoveis = carregar(IMOVEIS_KEY);
-        const imovel = imoveis.find(i => i.id === imovelId);
-
-        if (imovel) {
-            const foto = imovel.fotos.find(f => f.id === fotoId);
-            if (foto) {
-                foto.valor = parseFloat(document.getElementById('modalValor').value) || null;
-                foto.descricao = document.getElementById('modalDescricao').value;
-                salvar(IMOVEIS_KEY, imoveis);
-                mostrarAlerta('alertGaleria', 'Foto atualizada com sucesso!', 'success');
-                listarFotos();
-                fecharModalEdicao();
-            }
+    window.salvarEdicao = function() {
+      if (fotoEditando) {
+        let fotos = carregar(FOTOS_KEY);
+        const index = fotos.findIndex(f => f.id === fotoEditando.id);
+        if (index > -1) {
+          fotos[index].valor = parseFloat(modalValor.value) || 0;
+          fotos[index].descricao = modalDescricao.value;
+          salvar(FOTOS_KEY, fotos);
+          listarFotos();
+          fecharModalEdicao();
+          mostrarAlerta('alertGaleria', 'Foto atualizada com sucesso!', 'success');
         }
-    }
+      }
+    };
 
-    function deletarFoto(imovelId, fotoId) {
-        if (confirm('Tem certeza que deseja remover esta foto?')) {
-            let imoveis = carregar(IMOVEIS_KEY);
-            const imovel = imoveis.find(i => i.id === imovelId);
+    document.getElementById('formClientes').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const cliente = {
+        id: gerarIdUnico(),
+        nome: form.nome.value,
+        documento: form.documento.value,
+        telefone: form.telefone.value,
+        email: form.email.value,
+        interesse: form.interesse.value,
+        observacoes: form.observacoes.value,
+        dataCadastro: new Date().toISOString().split('T')[0]
+      };
+      const clientes = carregar(CLIENTES_KEY);
+      clientes.push(cliente);
+      salvar(CLIENTES_KEY, clientes);
+      mostrarAlerta('alertClientes', 'Cliente salvo com sucesso!', 'success');
+      form.reset();
+      listarClientes();
+    });
 
-            if (imovel) {
-                imovel.fotos = imovel.fotos.filter(f => f.id !== fotoId);
-                salvar(IMOVEIS_KEY, imoveis);
-                mostrarAlerta('alertGaleria', 'Foto removida com sucesso!', 'success');
-                listarFotos();
-            }
-        }
-    }
-
-    // --- CLIENTES ---
-
-    function processarCadastroCliente(event) {
-        event.preventDefault();
-        const form = event.target;
-        const cliente = {
-            id: gerarIdUnico(),
-            nome: form.nome.value,
-            documento: form.documento.value,
-            telefone: form.telefone.value,
-            email: form.email.value,
-            interesse: form.interesse.value,
-            observacoes: form.observacoes.value,
-            dataCadastro: new Date().toISOString().split('T')[0]
-        };
-
-        let clientes = carregar(CLIENTES_KEY);
-        clientes.push(cliente);
-        salvar(CLIENTES_KEY, clientes);
-
-        mostrarAlerta('alertClientes', 'Cliente cadastrado com sucesso!', 'success');
-        form.reset();
-        listarClientes();
-    }
+    document.getElementById('btnLimparCliente').addEventListener('click', function() {
+      document.getElementById('formClientes').reset();
+      document.getElementById('alertClientes').innerHTML = '';
+    });
 
     function listarClientes() {
-        const clientes = carregar(CLIENTES_KEY).sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
-        const listaDiv = document.getElementById('listaClientes');
-        listaDiv.innerHTML = '';
-
-        if (clientes.length === 0) {
-            listaDiv.innerHTML = '<p class="no-data">Nenhum cliente cadastrado.</p>';
-            return;
-        }
-
-        let tableHTML = `
-            <table class="table-auto">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Telefone</th>
-                        <th>Interesse</th>
-                        <th>Data Cadastro</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
+      const clientes = carregar(CLIENTES_KEY);
+      const listaDiv = document.getElementById('listaClientes');
+      listaDiv.innerHTML = '';
+      if (clientes.length === 0) {
+        listaDiv.innerHTML = '<div class="no-data">Nenhum cliente cadastrado.</div>';
+        return;
+      }
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Contato</th>
+            <th>Interesse</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      clientes.forEach(cliente => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${cliente.nome}</td>
+          <td>${cliente.telefone}<br><small style="color:var(--muted)">${cliente.email}</small></td>
+          <td>${cliente.interesse}</td>
+          <td>
+            <button class="btn danger" onclick="deletarCliente('${cliente.id}')">
+              <span class="material-icons" style="font-size:16px">delete</span>
+            </button>
+          </td>
         `;
-
-        clientes.forEach(c => {
-            tableHTML += `
-                <tr>
-                    <td>${c.nome}</td>
-                    <td>${c.telefone}</td>
-                    <td>${c.interesse}</td>
-                    <td>${new Date(c.dataCadastro).toLocaleDateString('pt-BR')}</td>
-                    <td>
-                        <button class="btn danger" onclick="deletarCliente('${c.id}')">
-                            <span class="material-icons" style="font-size:16px">delete</span>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableHTML += '</tbody></table>';
-        listaDiv.innerHTML = tableHTML;
+        tbody.appendChild(tr);
+      });
+      listaDiv.appendChild(table);
     }
 
-    function deletarCliente(id) {
-        if (confirm('Tem certeza que deseja deletar este cliente?')) {
-            let clientes = carregar(CLIENTES_KEY);
-            clientes = clientes.filter(c => c.id !== id);
-            salvar(CLIENTES_KEY, clientes);
-            listarClientes();
-        }
-    }
-
-    // --- VISITAS ---
-
-    function preencherSelectsVisitas() {
-        const imoveis = carregar(IMOVEIS_KEY).filter(i => i.status === 'Disponível' || i.status === 'Reservado');
-        const clientes = carregar(CLIENTES_KEY);
-
-        const selectImovel = document.getElementById('selectImovel');
-        const selectCliente = document.getElementById('selectCliente');
-
-        selectImovel.innerHTML = '<option value="">Selecione um imóvel</option>';
-        imoveis.forEach(i => {
-            const option = document.createElement('option');
-            option.value = i.id;
-            option.textContent = `${i.tipo} (${i.endereco.split(',')[0].trim()}) - ${formatarMoeda(i.valor)}`;
-            selectImovel.appendChild(option);
-        });
-
-        selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
-        clientes.forEach(c => {
-            const option = document.createElement('option');
-            option.value = c.id;
-            option.textContent = `${c.nome} (${c.telefone})`;
-            selectCliente.appendChild(option);
-        });
-    }
-
-    function processarAgendamentoVisita(event) {
-        event.preventDefault();
-        const form = event.target;
-        const visita = {
-            id: gerarIdUnico(),
-            imovelId: form.imovelId.value,
-            clienteId: form.clienteId.value,
-            data: form.data.value,
-            horario: form.horario.value,
-            observacoes: form.observacoes.value
-        };
+    window.deletarCliente = function(id) {
+      if (confirm('Tem certeza que deseja deletar este cliente?')) {
+        let clientes = carregar(CLIENTES_KEY);
+        clientes = clientes.filter(c => c.id !== id);
+        salvar(CLIENTES_KEY, clientes);
 
         let visitas = carregar(VISITAS_KEY);
-        visitas.push(visita);
+        visitas = visitas.filter(v => v.clienteId !== id);
         salvar(VISITAS_KEY, visitas);
 
-        mostrarAlerta('alertVisitas', 'Visita agendada com sucesso!', 'success');
-        form.reset();
-        listarVisitas();
+        listarClientes();
+        mostrarAlerta('listaClientes', 'Cliente deletado.', 'error');
+      }
     }
+
+    function preencherSelectsVisitas() {
+      const imoveis = carregar(IMOVEIS_KEY);
+      const clientes = carregar(CLIENTES_KEY);
+      const selectImovel = document.getElementById('selectImovel');
+      const selectCliente = document.getElementById('selectCliente');
+
+      selectImovel.innerHTML = '<option value="">Selecione um imóvel</option>';
+      imoveis.forEach(i => {
+        selectImovel.innerHTML += `<option value="${i.id}">${i.tipo} - ${i.endereco}</option>`;
+      });
+
+      selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
+      clientes.forEach(c => {
+        selectCliente.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+      });
+    }
+
+    document.getElementById('formVisitas').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const visita = {
+        id: gerarIdUnico(),
+        imovelId: form.imovelId.value,
+        clienteId: form.clienteId.value,
+        data: form.data.value,
+        horario: form.horario.value,
+        observacoes: form.observacoes.value,
+        status: 'Agendada'
+      };
+      const visitas = carregar(VISITAS_KEY);
+      visitas.push(visita);
+      salvar(VISITAS_KEY, visitas);
+      mostrarAlerta('alertVisitas', 'Visita agendada com sucesso!', 'success');
+      form.reset();
+      listarVisitas();
+    });
+
+    document.getElementById('btnLimparVisita').addEventListener('click', function() {
+      document.getElementById('formVisitas').reset();
+      document.getElementById('alertVisitas').innerHTML = '';
+    });
 
     function listarVisitas() {
-        const visitas = carregar(VISITAS_KEY);
-        const imoveis = carregar(IMOVEIS_KEY);
-        const clientes = carregar(CLIENTES_KEY);
-        const listaDiv = document.getElementById('listaVisitas');
-        listaDiv.innerHTML = '';
-
-        if (visitas.length === 0) {
-            listaDiv.innerHTML = '<p class="no-data">Nenhuma visita agendada.</p>';
-            return;
-        }
-
-        const visitasComInfo = visitas.map(v => {
-            const imovel = imoveis.find(i => i.id === v.imovelId);
-            const cliente = clientes.find(c => c.id === v.clienteId);
-            return {
-                ...v,
-                imovelEndereco: imovel ? imovel.endereco.split(',')[0].trim() : 'Imóvel Deletado',
-                clienteNome: cliente ? cliente.nome : 'Cliente Deletado',
-                clienteTel: cliente ? cliente.telefone : 'N/A'
-            };
-        }).sort((a, b) => {
-            const dateA = new Date(`${a.data}T${a.horario}`);
-            const dateB = new Date(`${b.data}T${b.horario}`);
-            return dateA - dateB;
-        });
-
-        let tableHTML = `
-            <table class="table-auto">
-                <thead>
-                    <tr>
-                        <th>Data/Hora</th>
-                        <th>Imóvel</th>
-                        <th>Cliente</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
+      const visitas = carregar(VISITAS_KEY);
+      const imoveis = carregar(IMOVEIS_KEY);
+      const clientes = carregar(CLIENTES_KEY);
+      const listaDiv = document.getElementById('listaVisitas');
+      listaDiv.innerHTML = '';
+      if (visitas.length === 0) {
+        listaDiv.innerHTML = '<div class="no-data">Nenhuma visita agendada.</div>';
+        return;
+      }
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Imóvel</th>
+            <th>Cliente</th>
+            <th>Data/Hora</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      visitas.forEach(visita => {
+        const imovel = imoveis.find(i => i.id === visita.imovelId);
+        const cliente = clientes.find(c => c.id === visita.clienteId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${imovel ? `${imovel.tipo} - ${imovel.endereco}` : 'Imóvel não encontrado'}</td>
+          <td>${cliente ? cliente.nome : 'Cliente não encontrado'}</td>
+          <td>${visita.data} às ${visita.horario}</td>
+          <td>
+            <button class="btn danger" onclick="deletarVisita('${visita.id}')">
+              <span class="material-icons" style="font-size:16px">delete</span>
+            </button>
+          </td>
         `;
-
-        visitasComInfo.forEach(v => {
-            const dataFormatada = new Date(v.data).toLocaleDateString('pt-BR');
-            tableHTML += `
-                <tr>
-                    <td>${dataFormatada} às ${v.horario}</td>
-                    <td>${v.imovelEndereco}</td>
-                    <td>${v.clienteNome} (${v.clienteTel})</td>
-                    <td>
-                        <button class="btn danger" onclick="deletarVisita('${v.id}')">
-                            <span class="material-icons" style="font-size:16px">delete</span>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableHTML += '</tbody></table>';
-        listaDiv.innerHTML = tableHTML;
+        tbody.appendChild(tr);
+      });
+      listaDiv.appendChild(table);
     }
 
-    function deletarVisita(id) {
-        if (confirm('Tem certeza que deseja cancelar esta visita?')) {
-            let visitas = carregar(VISITAS_KEY);
-            visitas = visitas.filter(v => v.id !== id);
-            salvar(VISITAS_KEY, visitas);
-            listarVisitas();
-        }
+    window.deletarVisita = function(id) {
+      if (confirm('Tem certeza que deseja deletar esta visita?')) {
+        let visitas = carregar(VISITAS_KEY);
+        visitas = visitas.filter(v => v.id !== id);
+        salvar(VISITAS_KEY, visitas);
+        listarVisitas();
+      }
     }
 
-    function exportarVisitasCSV() {
-        const visitas = carregar(VISITAS_KEY);
-        const imoveis = carregar(IMOVEIS_KEY);
-        const clientes = carregar(CLIENTES_KEY);
+    window.calcularFinanciamento = function() {
+      const valorImovel = parseFloat(document.getElementById('valorImovel').value) || 0;
+      const entrada = parseFloat(document.getElementById('entrada').value) || 0;
+      const taxaAnual = parseFloat(document.getElementById('taxaJuros').value) || 0;
+      const prazo = parseInt(document.getElementById('prazo').value) || 0;
 
-        if (visitas.length === 0) {
-            alert('Não há visitas para exportar.');
-            return;
-        }
+      if (valorImovel <= 0 || prazo <= 0) {
+        alert('Preencha os valores corretamente');
+        return;
+      }
 
-        const visitasComInfo = visitas.map(v => {
-            const imovel = imoveis.find(i => i.id === v.imovelId);
-            const cliente = clientes.find(c => c.id === v.clienteId);
-            return {
-                id: v.id,
-                data: v.data,
-                horario: v.horario,
-                imovelEndereco: imovel ? imovel.endereco : 'Imóvel Deletado',
-                imovelValor: imovel ? imovel.valor : 0,
-                clienteNome: cliente ? cliente.nome : 'Cliente Deletado',
-                clienteTelefone: cliente ? cliente.telefone : 'N/A',
-                observacoes: v.observacoes || ''
-            };
-        });
+      const valorFinanciado = valorImovel - entrada;
+      const taxaMensal = taxaAnual / 12 / 100;
+      const prestacao = valorFinanciado * (taxaMensal * Math.pow(1 + taxaMensal, prazo)) / (Math.pow(1 + taxaMensal, prazo) - 1);
+      const valorTotal = prestacao * prazo;
+      const jurosTotal = valorTotal - valorFinanciado;
 
-        const headers = ["ID", "Data", "Horário", "Imóvel Endereço", "Imóvel Valor (R$)", "Cliente Nome", "Cliente Telefone", "Observações"];
-        let csv = headers.join(";") + "\n";
-
-        visitasComInfo.forEach(v => {
-            const row = [
-                v.id,
-                v.data,
-                v.horario,
-                `"${v.imovelEndereco.replace(/"/g, '""')}"`,
-                (v.imovelValor || 0).toFixed(2).replace('.', ','),
-                `"${v.clienteNome.replace(/"/g, '""')}"`,
-                v.clienteTelefone,
-                `"${(v.observacoes || '').replace(/"/g, '""')}"`
-            ].join(";");
-            csv += row + "\n";
-        });
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "visitas_agendadas.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      document.getElementById('resultadoFinanciamento').style.display = 'block';
+      document.getElementById('resultadoTexto').innerHTML = `
+        <strong>Valor Financiado:</strong> ${formatarMoeda(valorFinanciado)}<br>
+        <strong>Prestação Mensal:</strong> ${formatarMoeda(prestacao)}<br>
+        <strong>Total a Pagar:</strong> ${formatarMoeda(valorTotal)}<br>
+        <strong>Juros Total:</strong> ${formatarMoeda(jurosTotal)}
+      `;
     }
 
-    // --- FERRAMENTAS ---
+    function atualizarEstatisticas() {
+      const imoveis = carregar(IMOVEIS_KEY);
+      const clientes = carregar(CLIENTES_KEY);
+      const visitas = carregar(VISITAS_KEY);
+      const fotos = carregar(FOTOS_KEY);
 
-    function calcularFinanciamento() {
-        const valorImovel = parseFloat(document.getElementById('valorImovel').value);
-        const entrada = parseFloat(document.getElementById('entrada').value);
-        const taxaJurosAnual = parseFloat(document.getElementById('taxaJuros').value);
-        const prazoMeses = parseInt(document.getElementById('prazo').value);
-        const resultadoDiv = document.getElementById('resultadoFinanciamento');
-        const resultadoTexto = document.getElementById('resultadoTexto');
+      const disponiv = imoveis.filter(i => i.status === 'Disponível').length;
+      const alugados = imoveis.filter(i => i.status === 'Alugado').length;
+      const vendidos = imoveis.filter(i => i.status === 'Vendido').length;
 
-        if (isNaN(valorImovel) || isNaN(entrada) || isNaN(taxaJurosAnual) || isNaN(prazoMeses) || valorImovel <= 0 || prazoMeses <= 0 || entrada > valorImovel) {
-            resultadoTexto.innerHTML = 'Preencha todos os campos corretamente.';
-            resultadoDiv.style.display = 'block';
-            resultadoDiv.style.background = '#fef3c7';
-            return;
-        }
+      const valorTotal = imoveis.reduce((sum, i) => sum + i.valor, 0);
 
-        const principal = valorImovel - entrada;
-        const taxaMensal = (taxaJurosAnual / 100) / 12;
-
-        // Fórmula de Amortização Constante (Tabela SAC) - Simplificada
-        // Neste caso, vou usar a fórmula de Price (Tabela Price) por ser mais comum para simulação rápida.
-        // Fórmula de Prestação (PMT) - Tabela Price: P * [i * (1 + i)^n] / [(1 + i)^n - 1]
-        
-        let prestacao = 0;
-        if (taxaMensal === 0) {
-            prestacao = principal / prazoMeses;
-        } else {
-            const i_plus_1_pow_n = Math.pow(1 + taxaMensal, prazoMeses);
-            prestacao = principal * (taxaMensal * i_plus_1_pow_n) / (i_plus_1_pow_n - 1);
-        }
-        
-        const totalPago = prestacao * prazoMeses + entrada;
-        const totalJuros = totalPago - valorImovel;
-
-        resultadoTexto.innerHTML = `
-            Valor Financiado: <strong>${formatarMoeda(principal)}</strong><br>
-            Prestação Mensal Estimada: <strong>${formatarMoeda(prestacao)}</strong><br>
-            Total Pago (Estimado): <strong>${formatarMoeda(totalPago)}</strong><br>
-            Total Juros (Estimado): <strong>${formatarMoeda(totalJuros)}</strong>
-        `;
-        resultadoDiv.style.display = 'block';
-        resultadoDiv.style.background = 'rgba(59,130,246,0.05)';
+      document.getElementById('estatisticas').innerHTML = `
+        <div style="font-size:14px;line-height:1.8">
+          <strong>📊 Imóveis:</strong> ${imoveis.length} total<br>
+          <strong>✅ Disponíveis:</strong> ${disponiv}<br>
+          <strong>🏠 Alugados:</strong> ${alugados}<br>
+          <strong>💰 Vendidos:</strong> ${vendidos}<br>
+          <strong>👥 Clientes:</strong> ${clientes.length}<br>
+          <strong>📅 Visitas:</strong> ${visitas.length}<br>
+          <strong>📸 Fotos:</strong> ${fotos.length}<br>
+          <strong>💵 Valor Total:</strong> ${formatarMoeda(valorTotal)}
+        </div>
+      `;
     }
-
-    function calcularEstatisticas() {
-        const imoveis = carregar(IMOVEIS_KEY);
-        const clientes = carregar(CLIENTES_KEY);
-        const visitas = carregar(VISITAS_KEY);
-
-        const totalImoveis = imoveis.length;
-        const totalClientes = clientes.length;
-        const totalVisitas = visitas.length;
-        
-        const imoveisDisponiveis = imoveis.filter(i => i.status === 'Disponível').length;
-        const imoveisVendidos = imoveis.filter(i => i.status === 'Vendido').length;
-        const imoveisAlugados = imoveis.filter(i => i.status === 'Alugado').length;
-        
-        const valorTotalVenda = imoveis.filter(i => i.finalidade.includes('Venda')).reduce((sum, i) => sum + (i.valor || 0), 0);
-        const valorMedioVenda = imoveisVendidos > 0 ? valorTotalVenda / imoveisVendidos : 0;
-
-        const statsDiv = document.getElementById('estatisticas');
-        statsDiv.innerHTML = `
-            <div class="detail-item"><strong>Total de Imóveis:</strong> <span>${totalImoveis}</span></div>
-            <div class="detail-item"><strong>Imóveis Disponíveis:</strong> <span>${imoveisDisponiveis}</span></div>
-            <div class="detail-item"><strong>Imóveis Vendidos:</strong> <span>${imoveisVendidos}</span></div>
-            <div class="detail-item"><strong>Imóveis Alugados:</strong> <span>${imoveisAlugados}</span></div>
-            <div class="detail-item" style="border-bottom: none;"><strong>Total de Clientes:</strong> <span>${totalClientes}</span></div>
-            <div class="detail-item"><strong>Total de Visitas Agendadas:</strong> <span>${totalVisitas}</span></div>
-            <div class="detail-item" style="margin-top: 10px; font-size: 15px; font-weight: 700; color: var(--accent);"><strong>Valor Médio Venda:</strong> <span>${formatarMoeda(valorMedioVenda)}</span></div>
-        `;
-    }
-
-
-    // --- INICIAÇÃO DA APLICAÇÃO ---
-
-    function initApp() {
-        // Event Listeners para a Navegação
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                trocarAba(btn.dataset.tab);
-            });
-        });
-
-        // Setup Drag and Drop (Cadastro)
-        setupDragAndDrop('uploadBoxCadastro', 'fileInputCadastro', 'previewGridCadastro', fotosCadastro);
-
-        // Setup Event Listeners
-        document.getElementById('formCadastro').addEventListener('submit', processarCadastroImovel);
-        document.getElementById('btnLimparForm').addEventListener('click', limparFormulario);
-        document.getElementById('btnExportPdf').addEventListener('click', exportarFichaPdf);
-        document.getElementById('btnRefreshImoveis').addEventListener('click', () => listarImoveis());
-        document.getElementById('btnExportCsv').addEventListener('click', exportarCsv);
-        document.getElementById('searchImoveis').addEventListener('input', (e) => listarImoveis(e.target.value));
-
-        // Setup Galeria
-        document.getElementById('uploadArea').addEventListener('click', () => document.getElementById('fileInput').click());
-        document.getElementById('fileInput').addEventListener('change', (e) => handleGalleryUpload(e.target.files));
-        document.querySelector('.modal-close').addEventListener('click', fecharModalEdicao);
-
-        // Setup Clientes
-        document.getElementById('formClientes').addEventListener('submit', processarCadastroCliente);
-        document.getElementById('btnLimparCliente').addEventListener('click', () => document.getElementById('formClientes').reset());
-
-        // Setup Visitas
-        document.getElementById('formVisitas').addEventListener('submit', processarAgendamentoVisita);
-        document.getElementById('btnLimparVisita').addEventListener('click', () => document.getElementById('formVisitas').reset());
-
-        // Setup Drag and Drop na Galeria (simulação de upload direto para um Imóvel genérico ou edição futura)
-        // Por enquanto, o upload da Galeria (uploadArea) não será implementado com a lógica, apenas o "handleGalleryUpload" simples.
-
-        function handleGalleryUpload(files) {
-            Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        // Simulação: Adiciona a foto ao primeiro imóvel disponível para que ela apareça na Galeria
-                        let imoveis = carregar(IMOVEIS_KEY);
-                        if (imoveis.length > 0) {
-                            imoveis[0].fotos = imoveis[0].fotos || [];
-                            imoveis[0].fotos.push({
-                                id: gerarIdUnico(),
-                                url: e.target.result,
-                                descricao: `Foto adicionada diretamente na Galeria.`,
-                                valor: null
-                            });
-                            salvar(IMOVEIS_KEY, imoveis);
-                            mostrarAlerta('alertGaleria', `Foto adicionada ao imóvel ${imoveis[0].endereco.split(',')[0].trim()}`, 'success');
-                            listarFotos();
-                        } else {
-                            mostrarAlerta('alertGaleria', 'Nenhum imóvel para anexar a foto. Use a aba Cadastro.', 'error');
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-
-        // Chamadas Iniciais
-        trocarAba('cadastro'); // Começa na aba de cadastro
-        calcularEstatisticas();
-    }
-    
-    // Inicia a aplicação
-    document.addEventListener('DOMContentLoaded', initApp);
-
-  </script>
+  </script>
 </body>
 </html>
