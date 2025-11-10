@@ -612,7 +612,6 @@
       color: var(--muted);
     }
 
-
     @media (max-width: 768px) {
       .sidebar {
         width: 70px;
@@ -695,6 +694,42 @@
     .tab-content.active {
       display: block;
     }
+
+    /* Estilos para a impressão (Visualização Cliente) */
+    @media print {
+        .app, .sidebar, .topbar, .actions button:not(.btn.success), #propertyViewTitle {
+            display: none !important;
+        }
+        .main-area {
+            padding: 0 !important;
+        }
+        #visualizacao {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+        .property-view-container {
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+        .container {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .carousel-container {
+            display: none !important; /* Esconde o carrossel na impressão */
+        }
+        /* Mostra todas as fotos empilhadas para impressão */
+        .property-view-container img {
+            width: 100%;
+            display: block;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+    }
   </style>
 </head>
 <body>
@@ -989,6 +1024,11 @@
                 </button>
               </div>
             </form>
+            <div style="margin-top:20px;">
+                <button class="btn success" onclick="exportarVisitasCSV()">
+                    <span class="material-icons">download</span> Exportar Visitas (CSV)
+                </button>
+            </div>
           </div>
           <div class="container">
             <h2>Visitas Agendadas</h2>
@@ -1040,7 +1080,7 @@
             <div class="container">
               <h2 id="propertyViewTitle">Visualização de Imóvel</h2>
               <div id="propertyViewContent">
-                <p class="no-data">Selecione um imóvel na aba "Imóveis Cadastrados" e clique em "Visualizar Cliente" para carregar aqui.</p>
+                <p class="no-data">Selecione um imóvel na aba **Imóveis** e clique em **Visualizar Cliente** para carregar esta ficha.</p>
               </div>
             </div>
           </div>
@@ -1056,6 +1096,7 @@
         <button class="modal-close">
           <span class="material-icons">close</span>
         </button>
+        <input type="hidden" id="modalFotoId">
       </div>
       <img id="modalImage" src="" alt="Foto">
       <div>
@@ -1104,6 +1145,8 @@
 
     let fotosCadastro = [];
     let fotoEditando = null;
+    let imovelEditandoId = null; // Para edição de imóveis
+    let currentSlideIndex = 0; // Para o carrossel
 
     function mostrarAlerta(containerId, mensagem, tipo) {
       const container = document.getElementById(containerId);
@@ -1176,14 +1219,17 @@
             case 'ferramentas':
                 calcularEstatisticas();
                 break;
-            // A aba 'visualizacao' é carregada via botão na listagem de imóveis
+            case 'cadastro':
+                limparFormulario();
+                break;
+            case 'visualizacao':
+                // Nenhuma ação. Espera o clique no botão "Visualizar Cliente"
+                break;
         }
       }
     }
 
     // --- LÓGICA DO CARROSSEL ---
-    
-    let currentSlideIndex = 0;
 
     function nextSlide(imovelId) {
         const track = document.getElementById(`carouselTrack-${imovelId}`);
@@ -1212,8 +1258,9 @@
         if (captionElement) {
             const fotoInfo = imovel.fotos[currentSlideIndex];
             // Se tiver descrição, usa ela. Senão, usa um texto padrão.
-            const legenda = fotoInfo.descricao || `Foto ${currentSlideIndex + 1} de ${imovel.fotos.length}`;
-            captionElement.textContent = legenda;
+            const preco = fotoInfo.valor ? formatarMoeda(fotoInfo.valor) : 'Preço não especificado';
+            const legenda = fotoInfo.descricao || `${imovel.tipo} - ${imovel.endereco.split(',')[0].trim()}`;
+            captionElement.innerHTML = `<strong>${preco}</strong><br>${legenda}`;
         }
     }
 
@@ -1235,8 +1282,7 @@
         let carouselHTML = '';
         
         if (imovel.fotos && imovel.fotos.length > 0) {
-            const slidesHTML = imovel.fotos.map((foto, index) => {
-                // A legenda na visualização do cliente virá do JS (updateCaption)
+            const slidesHTML = imovel.fotos.map((foto) => {
                 return `
                     <div class="carousel-slide">
                         <img src="${foto.url}" alt="${imovel.tipo} em ${imovel.endereco}">
@@ -1271,11 +1317,13 @@
             `;
         }
         
+        const enderecoCurto = imovel.endereco.split(',')[0].trim();
+        
         contentDiv.innerHTML = `
             ${carouselHTML}
             
             <div class="container" style="margin-bottom: 20px;">
-                <h3 style="font-size: 24px; margin-bottom: 8px;">${imovel.tipo} - ${imovel.finalidade}</h3>
+                <h3 style="font-size: 24px; margin-bottom: 8px;">${imovel.tipo} ${imovel.finalidade.includes('Venda') ? 'à Venda' : 'para Alugar'}</h3>
                 <p style="font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">
                     ${formatarMoeda(imovel.valor)} ${imovel.finalidade.includes('Aluguel') ? '/ Mês' : ''}
                 </p>
@@ -1287,11 +1335,11 @@
                 <h4 style="font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(15, 23, 42, 0.1);">Detalhes Principais</h4>
                 <div class="property-details">
                     <div class="detail-item"><strong>Tipo:</strong> <span>${imovel.tipo}</span></div>
-                    <div class="detail-item"><strong>Status:</strong> <span>${getBadge(imovel.status)}</span></div>
-                    <div class="detail-item"><strong>Área:</strong> <span>${imovel.area || 'N/A'} m²</span></div>
+                    <div class="detail-item"><strong>Área:</strong> <span>${imovel.area ? imovel.area + ' m²' : 'N/A'}</span></div>
                     <div class="detail-item"><strong>Quartos:</strong> <span>${imovel.quartos || 0}</span></div>
                     <div class="detail-item"><strong>Banheiros:</strong> <span>${imovel.banheiros || 0}</span></div>
                     <div class="detail-item"><strong>Vagas:</strong> <span>${imovel.vagas || 0}</span></div>
+                    ${imovel.condominio ? `<div class="detail-item"><strong>Condomínio:</strong> <span>${formatarMoeda(imovel.condominio)}</span></div>` : ''}
                 </div>
 
                 ${imovel.observacoes ? `
@@ -1303,7 +1351,7 @@
                     <button class="btn success" onclick="window.print()">
                         <span class="material-icons">print</span> Imprimir Ficha
                     </button>
-                    <button class="btn primary" onclick="alert('Solicitação de Visita enviada! (Simulação)')">
+                    <button class="btn primary" onclick="alert('Solicitação de Visita para o imóvel ${enderecoCurto} enviada! (Simulação)')">
                         <span class="material-icons">event_available</span> Agendar Visita
                     </button>
                 </div>
@@ -1311,19 +1359,189 @@
         `;
 
         trocarAba('visualizacao');
+
+        // Adiciona as imagens para impressão (ocultas na tela, exceto em @media print)
+        if (imovel.fotos && imovel.fotos.length > 0) {
+            const printImagesHTML = imovel.fotos.map((foto, index) => {
+                const fotoPreco = foto.valor ? formatarMoeda(foto.valor) : 'Preço não especificado';
+                const fotoDesc = foto.descricao || `Foto ${index + 1}`;
+                return `
+                    <div style="display:none;" class="print-only">
+                        <img src="${foto.url}" alt="${fotoDesc}">
+                        <p style="text-align:center; margin-top:-10px; margin-bottom: 30px; font-size: 14px; color: #333;">${fotoDesc} - ${fotoPreco}</p>
+                    </div>
+                `;
+            }).join('');
+            contentDiv.innerHTML += printImagesHTML;
+        }
         
         if (imovel.fotos && imovel.fotos.length > 0) {
             updateCaption(imovelId); // Define a legenda da primeira imagem
         }
     }
 
-    // --- OUTRAS FUNÇÕES (DELETAR, LISTAR, ETC.) ---
+    // --- CADASTRO DE IMÓVEIS ---
 
-    // Função de Listar Imóveis (ATUALIZADA com botão de Visualização)
+    function setupDragAndDrop(uploadBoxId, fileInputId, previewGridId, fotoList) {
+        const uploadBox = document.getElementById(uploadBoxId);
+        const fileInput = document.getElementById(fileInputId);
+        const previewGrid = document.getElementById(previewGridId);
+
+        uploadBox.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files, fotoList, previewGrid);
+        });
+
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+
+        uploadBox.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files, fotoList, previewGrid);
+        });
+    }
+
+    function handleFiles(files, fotoList, previewGrid) {
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const newFoto = {
+                        id: gerarIdUnico(),
+                        url: e.target.result,
+                        descricao: '',
+                        valor: null
+                    };
+                    fotoList.push(newFoto);
+                    renderPreview(fotoList, previewGrid);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function renderPreview(fotoList, previewGrid) {
+        previewGrid.innerHTML = '';
+        fotoList.forEach((foto, index) => {
+            const item = document.createElement('div');
+            item.className = 'preview-item';
+            item.innerHTML = `
+                <img src="${foto.url}" alt="Prévia da foto ${index + 1}">
+                <button class="remove-btn" onclick="removerFotoCadastro('${foto.id}')">
+                    <span class="material-icons" style="font-size:16px">close</span>
+                </button>
+            `;
+            previewGrid.appendChild(item);
+        });
+    }
+
+    function removerFotoCadastro(fotoId) {
+        fotosCadastro = fotosCadastro.filter(foto => foto.id !== fotoId);
+        renderPreview(fotosCadastro, document.getElementById('previewGridCadastro'));
+    }
+
+    function processarCadastroImovel(event) {
+        event.preventDefault();
+        const form = event.target;
+        const imovel = {
+            id: imovelEditandoId || gerarIdUnico(),
+            tipo: form.tipo.value,
+            finalidade: form.finalidade.value,
+            endereco: form.endereco.value,
+            cep: form.cep.value,
+            area: parseFloat(form.area.value) || null,
+            quartos: parseInt(form.quartos.value) || null,
+            banheiros: parseInt(form.banheiros.value) || null,
+            vagas: parseInt(form.vagas.value) || null,
+            valor: parseFloat(form.valor.value),
+            condominio: parseFloat(form.condominio.value) || null,
+            iptu: parseFloat(form.iptu.value) || null,
+            status: form.status.value,
+            proprietario: form.proprietario.value,
+            observacoes: form.observacoes.value,
+            fotos: fotosCadastro
+        };
+
+        let imoveis = carregar(IMOVEIS_KEY);
+
+        if (imovelEditandoId) {
+            const index = imoveis.findIndex(i => i.id === imovelEditandoId);
+            if (index !== -1) {
+                imoveis[index] = imovel;
+                mostrarAlerta('alertCadastro', 'Imóvel atualizado com sucesso!', 'success');
+            }
+        } else {
+            imoveis.push(imovel);
+            mostrarAlerta('alertCadastro', 'Imóvel cadastrado com sucesso!', 'success');
+        }
+
+        salvar(IMOVEIS_KEY, imoveis);
+        limparFormulario();
+        imovelEditandoId = null;
+    }
+
+    function limparFormulario() {
+        document.getElementById('formCadastro').reset();
+        fotosCadastro = [];
+        renderPreview(fotosCadastro, document.getElementById('previewGridCadastro'));
+        imovelEditandoId = null;
+        document.querySelector('.btn.primary').innerHTML = '<span class="material-icons">save</span> Salvar Imóvel';
+        document.getElementById('pageTitle').textContent = pageTitles.cadastro;
+    }
+
+    function abrirEdicaoImovel(id) {
+        const imoveis = carregar(IMOVEIS_KEY);
+        const imovel = imoveis.find(i => i.id === id);
+
+        if (imovel) {
+            imovelEditandoId = id;
+            const form = document.getElementById('formCadastro');
+            form.tipo.value = imovel.tipo;
+            form.finalidade.value = imovel.finalidade;
+            form.endereco.value = imovel.endereco;
+            form.cep.value = imovel.cep || '';
+            form.area.value = imovel.area || '';
+            form.quartos.value = imovel.quartos || '';
+            form.banheiros.value = imovel.banheiros || '';
+            form.vagas.value = imovel.vagas || '';
+            form.valor.value = imovel.valor;
+            form.condominio.value = imovel.condominio || '';
+            form.iptu.value = imovel.iptu || '';
+            form.status.value = imovel.status;
+            form.proprietario.value = imovel.proprietario || '';
+            form.observacoes.value = imovel.observacoes || '';
+
+            fotosCadastro = imovel.fotos || [];
+            renderPreview(fotosCadastro, document.getElementById('previewGridCadastro'));
+
+            document.querySelector('.btn.primary').innerHTML = '<span class="material-icons">update</span> Atualizar Imóvel';
+            document.getElementById('pageTitle').textContent = 'Edição de Imóvel';
+            trocarAba('cadastro');
+        } else {
+            alert('Imóvel não encontrado.');
+        }
+    }
+
+    function deletarImovel(id) {
+        if (confirm('Tem certeza que deseja deletar este imóvel?')) {
+            let imoveis = carregar(IMOVEIS_KEY);
+            imoveis = imoveis.filter(i => i.id !== id);
+            salvar(IMOVEIS_KEY, imoveis);
+            listarImoveis();
+            calcularEstatisticas();
+        }
+    }
+
     function listarImoveis(termoPesquisa = '') {
-        // ... (Seu código de listar Imóveis original) ...
-        // APENAS ATUALIZANDO O TRECHO DA TABELA:
-
         let imoveis = carregar(IMOVEIS_KEY);
         const listaDiv = document.getElementById('listaImoveis');
         listaDiv.innerHTML = '';
@@ -1333,7 +1551,7 @@
             imoveis = imoveis.filter(i => 
                 i.endereco.toLowerCase().includes(termo) ||
                 i.tipo.toLowerCase().includes(termo) ||
-                i.proprietario.toLowerCase().includes(termo)
+                (i.proprietario && i.proprietario.toLowerCase().includes(termo))
             );
         }
 
@@ -1358,10 +1576,11 @@
         `;
 
         imoveis.forEach(imovel => {
+            const enderecoCurto = imovel.endereco.split(',')[0].trim();
             tableHTML += `
                 <tr>
                     <td>${imovel.id.substring(0, 6)}...</td>
-                    <td>${imovel.endereco}</td>
+                    <td>${enderecoCurto}</td>
                     <td>${imovel.tipo} (${imovel.finalidade})</td>
                     <td>${formatarMoeda(imovel.valor)}</td>
                     <td>${getBadge(imovel.status)}</td>
@@ -1383,42 +1602,564 @@
         tableHTML += '</tbody></table>';
         listaDiv.innerHTML = tableHTML;
     }
-    // ... (O restante da sua função listarImoveis e outras funções originais) ...
 
-    // O restante das suas funções JavaScript devem seguir aqui.
-    // Para manter a resposta compacta, estou deixando apenas a parte ATUALIZADA/NOVA.
-    // Garanta que você cole TODO o seu código JS original e substitua/adicione as funções de Carrossel/Visualização acima.
+    function exportarCsv() {
+        const imoveis = carregar(IMOVEIS_KEY);
+        if (imoveis.length === 0) {
+            alert('Não há imóveis para exportar.');
+            return;
+        }
 
-    // --- FUNÇÕES FALTANTES (COMPLETANDO OS GATILHOS) ---
-    // Você deve ter as seguintes funções completas:
-    // - processarCadastroImovel
-    // - deletarImovel
-    // - abrirEdicaoImovel
-    // - processarEdicaoImovel
-    // - limparFormulario
-    // - exportarFichaPdf
-    // - setupDragAndDrop (e helpers)
-    // - listarFotos
-    // - deletarFoto
-    // - abrirModalEdicao (galeria)
-    // - fecharModalEdicao (galeria)
-    // - salvarEdicao (galeria)
-    // - listarClientes
-    // - processarCadastroCliente
-    // - deletarCliente
-    // - preencherSelectsVisitas
-    // - processarAgendamentoVisita
-    // - listarVisitas
-    // - deletarVisita
-    // - calcularFinanciamento
-    // - calcularEstatisticas
-    // - initApp (para iniciar os event listeners)
+        const headers = ["ID", "Tipo", "Finalidade", "Endereço", "CEP", "Área (m²)", "Quartos", "Banheiros", "Vagas", "Valor", "Condomínio", "IPTU", "Status", "Proprietário", "Observações", "Fotos Count"];
+        let csv = headers.join(";") + "\n";
+
+        imoveis.forEach(i => {
+            const row = [
+                i.id,
+                i.tipo,
+                i.finalidade,
+                `"${i.endereco.replace(/"/g, '""')}"`,
+                i.cep || '',
+                i.area || '',
+                i.quartos || '',
+                i.banheiros || '',
+                i.vagas || '',
+                (i.valor || 0).toFixed(2).replace('.', ','),
+                (i.condominio || 0).toFixed(2).replace('.', ','),
+                (i.iptu || 0).toFixed(2).replace('.', ','),
+                i.status,
+                `"${(i.proprietario || '').replace(/"/g, '""')}"`,
+                `"${(i.observacoes || '').replace(/"/g, '""')}"`,
+                (i.fotos || []).length
+            ].join(";");
+            csv += row + "\n";
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "imoveis_export.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportarFichaPdf() {
+        const form = document.getElementById('formCadastro');
+        const imovel = {
+            tipo: form.tipo.value,
+            finalidade: form.finalidade.value,
+            endereco: form.endereco.value,
+            valor: parseFloat(form.valor.value) || 0,
+            area: parseFloat(form.area.value) || null,
+            quartos: parseInt(form.quartos.value) || null,
+            banheiros: parseInt(form.banheiros.value) || null,
+            vagas: parseInt(form.vagas.value) || null,
+            observacoes: form.observacoes.value,
+            fotos: fotosCadastro
+        };
+
+        if (!imovel.tipo || !imovel.endereco || !imovel.valor) {
+            mostrarAlerta('alertCadastro', 'Preencha pelo menos Tipo, Endereço e Valor para gerar a ficha.', 'error');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 15;
+        const margin = 15;
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Título Principal
+        doc.setFontSize(18);
+        doc.setTextColor(59, 130, 246);
+        doc.text(`Ficha de Imóvel: ${imovel.tipo} (${imovel.finalidade})`, margin, y);
+        y += 10;
+
+        // Valor
+        doc.setFontSize(14);
+        doc.setTextColor(30, 50, 90);
+        doc.text(`Valor: ${formatarMoeda(imovel.valor)}`, margin, y);
+        y += 8;
+
+        // Endereço e Detalhes
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Endereço: ${imovel.endereco}`, margin, y);
+        y += 5;
+        doc.text(`Área: ${imovel.area || 'N/A'} m² | Quartos: ${imovel.quartos || 'N/A'} | Banheiros: ${imovel.banheiros || 'N/A'} | Vagas: ${imovel.vagas || 'N/A'}`, margin, y);
+        y += 10;
+
+        // Observações
+        if (imovel.observacoes) {
+            doc.setFontSize(12);
+            doc.setTextColor(30, 50, 90);
+            doc.text('Características / Observações:', margin, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setTextColor(50, 50, 50);
+            const splitText = doc.splitTextToSize(imovel.observacoes, pageWidth - (2 * margin));
+            doc.text(splitText, margin, y);
+            y += (splitText.length * 5) + 5;
+        }
+
+        // Fotos
+        doc.setFontSize(12);
+        doc.setTextColor(30, 50, 90);
+        doc.text('Fotos (Apenas a primeira):', margin, y);
+        y += 5;
+
+        if (imovel.fotos && imovel.fotos.length > 0) {
+            const img = imovel.fotos[0].url;
+            const imgWidth = pageWidth - (2 * margin);
+            const imgHeight = imgWidth * 0.5625; // Proporção 16:9
+
+            if (y + imgHeight > doc.internal.pageSize.getHeight() - 10) {
+                doc.addPage();
+                y = 15;
+            }
+
+            doc.addImage(img, 'JPEG', margin, y, imgWidth, imgHeight);
+            y += imgHeight + 10;
+        } else {
+            doc.setFontSize(10);
+            doc.setTextColor(150, 0, 0);
+            doc.text('Nenhuma foto anexada.', margin, y);
+            y += 10;
+        }
+
+        doc.save(`ficha_imovel_${imovel.tipo}_${imovel.endereco.substring(0, 10)}.pdf`);
+    }
+
+    // --- GALERIA ---
+
+    function listarFotos() {
+        const imoveis = carregar(IMOVEIS_KEY);
+        let allPhotos = [];
+        imoveis.forEach(imovel => {
+            if (imovel.fotos) {
+                imovel.fotos.forEach(foto => {
+                    allPhotos.push({
+                        ...foto,
+                        imovelId: imovel.id,
+                        imovelEndereco: imovel.endereco.split(',')[0].trim()
+                    });
+                });
+            }
+        });
+        
+        const photoCountElement = document.getElementById('photoCount');
+        photoCountElement.textContent = allPhotos.length;
+
+        const galleryGrid = document.getElementById('galleryGrid');
+        galleryGrid.innerHTML = '';
+
+        if (allPhotos.length === 0) {
+            galleryGrid.innerHTML = '<p class="no-data">Nenhuma foto na galeria.</p>';
+            return;
+        }
+
+        allPhotos.forEach(foto => {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.innerHTML = `
+                <img src="${foto.url}" alt="Foto do imóvel ${foto.imovelEndereco}">
+                <div class="photo-info">
+                    <div class="price">${foto.valor ? formatarMoeda(foto.valor) : 'N/A'}</div>
+                    <p class="description">${foto.descricao || 'Sem descrição'}</p>
+                    <p style="font-size:12px;color:var(--primary);font-weight:600;">Imóvel: ${foto.imovelEndereco}</p>
+                </div>
+                <div class="photo-actions">
+                    <button class="btn primary" onclick="abrirModalEdicao('${foto.imovelId}', '${foto.id}')">
+                        <span class="material-icons" style="font-size:16px">edit</span> Editar
+                    </button>
+                    <button class="btn danger" onclick="deletarFoto('${foto.imovelId}', '${foto.id}')">
+                        <span class="material-icons" style="font-size:16px">delete</span>
+                    </button>
+                </div>
+            `;
+            galleryGrid.appendChild(card);
+        });
+    }
+
+    // --- FUNÇÕES DE EDIÇÃO DE FOTO (MODAL) ---
+
+    function abrirModalEdicao(imovelId, fotoId) {
+        const imoveis = carregar(IMOVEIS_KEY);
+        const imovel = imoveis.find(i => i.id === imovelId);
+        const foto = imovel ? imovel.fotos.find(f => f.id === fotoId) : null;
+
+        if (foto) {
+            document.getElementById('modalImage').src = foto.url;
+            document.getElementById('modalValor').value = foto.valor || '';
+            document.getElementById('modalDescricao').value = foto.descricao || '';
+            document.getElementById('modalFotoId').value = `${imovelId}|${fotoId}`; // Armazena ambos IDs
+            document.getElementById('editModal').classList.add('active');
+        } else {
+            alert('Foto não encontrada.');
+        }
+    }
+
+    function fecharModalEdicao() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+
+    function salvarEdicao() {
+        const idParts = document.getElementById('modalFotoId').value.split('|');
+        if (idParts.length !== 2) return;
+        const [imovelId, fotoId] = idParts;
+
+        let imoveis = carregar(IMOVEIS_KEY);
+        const imovel = imoveis.find(i => i.id === imovelId);
+
+        if (imovel) {
+            const foto = imovel.fotos.find(f => f.id === fotoId);
+            if (foto) {
+                foto.valor = parseFloat(document.getElementById('modalValor').value) || null;
+                foto.descricao = document.getElementById('modalDescricao').value;
+                salvar(IMOVEIS_KEY, imoveis);
+                mostrarAlerta('alertGaleria', 'Foto atualizada com sucesso!', 'success');
+                listarFotos();
+                fecharModalEdicao();
+            }
+        }
+    }
+
+    function deletarFoto(imovelId, fotoId) {
+        if (confirm('Tem certeza que deseja remover esta foto?')) {
+            let imoveis = carregar(IMOVEIS_KEY);
+            const imovel = imoveis.find(i => i.id === imovelId);
+
+            if (imovel) {
+                imovel.fotos = imovel.fotos.filter(f => f.id !== fotoId);
+                salvar(IMOVEIS_KEY, imoveis);
+                mostrarAlerta('alertGaleria', 'Foto removida com sucesso!', 'success');
+                listarFotos();
+            }
+        }
+    }
+
+    // --- CLIENTES ---
+
+    function processarCadastroCliente(event) {
+        event.preventDefault();
+        const form = event.target;
+        const cliente = {
+            id: gerarIdUnico(),
+            nome: form.nome.value,
+            documento: form.documento.value,
+            telefone: form.telefone.value,
+            email: form.email.value,
+            interesse: form.interesse.value,
+            observacoes: form.observacoes.value,
+            dataCadastro: new Date().toISOString().split('T')[0]
+        };
+
+        let clientes = carregar(CLIENTES_KEY);
+        clientes.push(cliente);
+        salvar(CLIENTES_KEY, clientes);
+
+        mostrarAlerta('alertClientes', 'Cliente cadastrado com sucesso!', 'success');
+        form.reset();
+        listarClientes();
+    }
+
+    function listarClientes() {
+        const clientes = carregar(CLIENTES_KEY).sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
+        const listaDiv = document.getElementById('listaClientes');
+        listaDiv.innerHTML = '';
+
+        if (clientes.length === 0) {
+            listaDiv.innerHTML = '<p class="no-data">Nenhum cliente cadastrado.</p>';
+            return;
+        }
+
+        let tableHTML = `
+            <table class="table-auto">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Interesse</th>
+                        <th>Data Cadastro</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        clientes.forEach(c => {
+            tableHTML += `
+                <tr>
+                    <td>${c.nome}</td>
+                    <td>${c.telefone}</td>
+                    <td>${c.interesse}</td>
+                    <td>${new Date(c.dataCadastro).toLocaleDateString('pt-BR')}</td>
+                    <td>
+                        <button class="btn danger" onclick="deletarCliente('${c.id}')">
+                            <span class="material-icons" style="font-size:16px">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += '</tbody></table>';
+        listaDiv.innerHTML = tableHTML;
+    }
+
+    function deletarCliente(id) {
+        if (confirm('Tem certeza que deseja deletar este cliente?')) {
+            let clientes = carregar(CLIENTES_KEY);
+            clientes = clientes.filter(c => c.id !== id);
+            salvar(CLIENTES_KEY, clientes);
+            listarClientes();
+        }
+    }
+
+    // --- VISITAS ---
+
+    function preencherSelectsVisitas() {
+        const imoveis = carregar(IMOVEIS_KEY).filter(i => i.status === 'Disponível' || i.status === 'Reservado');
+        const clientes = carregar(CLIENTES_KEY);
+
+        const selectImovel = document.getElementById('selectImovel');
+        const selectCliente = document.getElementById('selectCliente');
+
+        selectImovel.innerHTML = '<option value="">Selecione um imóvel</option>';
+        imoveis.forEach(i => {
+            const option = document.createElement('option');
+            option.value = i.id;
+            option.textContent = `${i.tipo} (${i.endereco.split(',')[0].trim()}) - ${formatarMoeda(i.valor)}`;
+            selectImovel.appendChild(option);
+        });
+
+        selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
+        clientes.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = `${c.nome} (${c.telefone})`;
+            selectCliente.appendChild(option);
+        });
+    }
+
+    function processarAgendamentoVisita(event) {
+        event.preventDefault();
+        const form = event.target;
+        const visita = {
+            id: gerarIdUnico(),
+            imovelId: form.imovelId.value,
+            clienteId: form.clienteId.value,
+            data: form.data.value,
+            horario: form.horario.value,
+            observacoes: form.observacoes.value
+        };
+
+        let visitas = carregar(VISITAS_KEY);
+        visitas.push(visita);
+        salvar(VISITAS_KEY, visitas);
+
+        mostrarAlerta('alertVisitas', 'Visita agendada com sucesso!', 'success');
+        form.reset();
+        listarVisitas();
+    }
+
+    function listarVisitas() {
+        const visitas = carregar(VISITAS_KEY);
+        const imoveis = carregar(IMOVEIS_KEY);
+        const clientes = carregar(CLIENTES_KEY);
+        const listaDiv = document.getElementById('listaVisitas');
+        listaDiv.innerHTML = '';
+
+        if (visitas.length === 0) {
+            listaDiv.innerHTML = '<p class="no-data">Nenhuma visita agendada.</p>';
+            return;
+        }
+
+        const visitasComInfo = visitas.map(v => {
+            const imovel = imoveis.find(i => i.id === v.imovelId);
+            const cliente = clientes.find(c => c.id === v.clienteId);
+            return {
+                ...v,
+                imovelEndereco: imovel ? imovel.endereco.split(',')[0].trim() : 'Imóvel Deletado',
+                clienteNome: cliente ? cliente.nome : 'Cliente Deletado',
+                clienteTel: cliente ? cliente.telefone : 'N/A'
+            };
+        }).sort((a, b) => {
+            const dateA = new Date(`${a.data}T${a.horario}`);
+            const dateB = new Date(`${b.data}T${b.horario}`);
+            return dateA - dateB;
+        });
+
+        let tableHTML = `
+            <table class="table-auto">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Imóvel</th>
+                        <th>Cliente</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        visitasComInfo.forEach(v => {
+            const dataFormatada = new Date(v.data).toLocaleDateString('pt-BR');
+            tableHTML += `
+                <tr>
+                    <td>${dataFormatada} às ${v.horario}</td>
+                    <td>${v.imovelEndereco}</td>
+                    <td>${v.clienteNome} (${v.clienteTel})</td>
+                    <td>
+                        <button class="btn danger" onclick="deletarVisita('${v.id}')">
+                            <span class="material-icons" style="font-size:16px">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += '</tbody></table>';
+        listaDiv.innerHTML = tableHTML;
+    }
+
+    function deletarVisita(id) {
+        if (confirm('Tem certeza que deseja cancelar esta visita?')) {
+            let visitas = carregar(VISITAS_KEY);
+            visitas = visitas.filter(v => v.id !== id);
+            salvar(VISITAS_KEY, visitas);
+            listarVisitas();
+        }
+    }
+
+    function exportarVisitasCSV() {
+        const visitas = carregar(VISITAS_KEY);
+        const imoveis = carregar(IMOVEIS_KEY);
+        const clientes = carregar(CLIENTES_KEY);
+
+        if (visitas.length === 0) {
+            alert('Não há visitas para exportar.');
+            return;
+        }
+
+        const visitasComInfo = visitas.map(v => {
+            const imovel = imoveis.find(i => i.id === v.imovelId);
+            const cliente = clientes.find(c => c.id === v.clienteId);
+            return {
+                id: v.id,
+                data: v.data,
+                horario: v.horario,
+                imovelEndereco: imovel ? imovel.endereco : 'Imóvel Deletado',
+                imovelValor: imovel ? imovel.valor : 0,
+                clienteNome: cliente ? cliente.nome : 'Cliente Deletado',
+                clienteTelefone: cliente ? cliente.telefone : 'N/A',
+                observacoes: v.observacoes || ''
+            };
+        });
+
+        const headers = ["ID", "Data", "Horário", "Imóvel Endereço", "Imóvel Valor (R$)", "Cliente Nome", "Cliente Telefone", "Observações"];
+        let csv = headers.join(";") + "\n";
+
+        visitasComInfo.forEach(v => {
+            const row = [
+                v.id,
+                v.data,
+                v.horario,
+                `"${v.imovelEndereco.replace(/"/g, '""')}"`,
+                (v.imovelValor || 0).toFixed(2).replace('.', ','),
+                `"${v.clienteNome.replace(/"/g, '""')}"`,
+                v.clienteTelefone,
+                `"${(v.observacoes || '').replace(/"/g, '""')}"`
+            ].join(";");
+            csv += row + "\n";
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "visitas_agendadas.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // --- FERRAMENTAS ---
+
+    function calcularFinanciamento() {
+        const valorImovel = parseFloat(document.getElementById('valorImovel').value);
+        const entrada = parseFloat(document.getElementById('entrada').value);
+        const taxaJurosAnual = parseFloat(document.getElementById('taxaJuros').value);
+        const prazoMeses = parseInt(document.getElementById('prazo').value);
+        const resultadoDiv = document.getElementById('resultadoFinanciamento');
+        const resultadoTexto = document.getElementById('resultadoTexto');
+
+        if (isNaN(valorImovel) || isNaN(entrada) || isNaN(taxaJurosAnual) || isNaN(prazoMeses) || valorImovel <= 0 || prazoMeses <= 0 || entrada > valorImovel) {
+            resultadoTexto.innerHTML = 'Preencha todos os campos corretamente.';
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.style.background = '#fef3c7';
+            return;
+        }
+
+        const principal = valorImovel - entrada;
+        const taxaMensal = (taxaJurosAnual / 100) / 12;
+
+        // Fórmula de Amortização Constante (Tabela SAC) - Simplificada
+        // Neste caso, vou usar a fórmula de Price (Tabela Price) por ser mais comum para simulação rápida.
+        // Fórmula de Prestação (PMT) - Tabela Price: P * [i * (1 + i)^n] / [(1 + i)^n - 1]
+        
+        let prestacao = 0;
+        if (taxaMensal === 0) {
+            prestacao = principal / prazoMeses;
+        } else {
+            const i_plus_1_pow_n = Math.pow(1 + taxaMensal, prazoMeses);
+            prestacao = principal * (taxaMensal * i_plus_1_pow_n) / (i_plus_1_pow_n - 1);
+        }
+        
+        const totalPago = prestacao * prazoMeses + entrada;
+        const totalJuros = totalPago - valorImovel;
+
+        resultadoTexto.innerHTML = `
+            Valor Financiado: <strong>${formatarMoeda(principal)}</strong><br>
+            Prestação Mensal Estimada: <strong>${formatarMoeda(prestacao)}</strong><br>
+            Total Pago (Estimado): <strong>${formatarMoeda(totalPago)}</strong><br>
+            Total Juros (Estimado): <strong>${formatarMoeda(totalJuros)}</strong>
+        `;
+        resultadoDiv.style.display = 'block';
+        resultadoDiv.style.background = 'rgba(59,130,246,0.05)';
+    }
+
+    function calcularEstatisticas() {
+        const imoveis = carregar(IMOVEIS_KEY);
+        const clientes = carregar(CLIENTES_KEY);
+        const visitas = carregar(VISITAS_KEY);
+
+        const totalImoveis = imoveis.length;
+        const totalClientes = clientes.length;
+        const totalVisitas = visitas.length;
+        
+        const imoveisDisponiveis = imoveis.filter(i => i.status === 'Disponível').length;
+        const imoveisVendidos = imoveis.filter(i => i.status === 'Vendido').length;
+        const imoveisAlugados = imoveis.filter(i => i.status === 'Alugado').length;
+        
+        const valorTotalVenda = imoveis.filter(i => i.finalidade.includes('Venda')).reduce((sum, i) => sum + (i.valor || 0), 0);
+        const valorMedioVenda = imoveisVendidos > 0 ? valorTotalVenda / imoveisVendidos : 0;
+
+        const statsDiv = document.getElementById('estatisticas');
+        statsDiv.innerHTML = `
+            <div class="detail-item"><strong>Total de Imóveis:</strong> <span>${totalImoveis}</span></div>
+            <div class="detail-item"><strong>Imóveis Disponíveis:</strong> <span>${imoveisDisponiveis}</span></div>
+            <div class="detail-item"><strong>Imóveis Vendidos:</strong> <span>${imoveisVendidos}</span></div>
+            <div class="detail-item"><strong>Imóveis Alugados:</strong> <span>${imoveisAlugados}</span></div>
+            <div class="detail-item" style="border-bottom: none;"><strong>Total de Clientes:</strong> <span>${totalClientes}</span></div>
+            <div class="detail-item"><strong>Total de Visitas Agendadas:</strong> <span>${totalVisitas}</span></div>
+            <div class="detail-item" style="margin-top: 10px; font-size: 15px; font-weight: 700; color: var(--accent);"><strong>Valor Médio Venda:</strong> <span>${formatarMoeda(valorMedioVenda)}</span></div>
+        `;
+    }
 
 
-    // ... (O CÓDIGO JavaScript COMPLETO ORIGINAL VAI AQUI) ...
-    
-    // --- FUNÇÃO initApp (INÍCIO DA APLICAÇÃO) ---
-    
+    // --- INICIAÇÃO DA APLICAÇÃO ---
+
     function initApp() {
         // Event Listeners para a Navegação
         document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1427,18 +2168,68 @@
             });
         });
 
-        // Configurações de Cadastro (Formulário, Upload, Limpar)
-        // Você deve ter todos os EventListeners aqui:
-        // document.getElementById('formCadastro').addEventListener('submit', processarCadastroImovel);
-        // document.getElementById('uploadBoxCadastro').addEventListener('click', () => { ... });
-        // etc...
+        // Setup Drag and Drop (Cadastro)
+        setupDragAndDrop('uploadBoxCadastro', 'fileInputCadastro', 'previewGridCadastro', fotosCadastro);
 
-        // Chamada Inicial
-        listarImoveis();
+        // Setup Event Listeners
+        document.getElementById('formCadastro').addEventListener('submit', processarCadastroImovel);
+        document.getElementById('btnLimparForm').addEventListener('click', limparFormulario);
+        document.getElementById('btnExportPdf').addEventListener('click', exportarFichaPdf);
+        document.getElementById('btnRefreshImoveis').addEventListener('click', () => listarImoveis());
+        document.getElementById('btnExportCsv').addEventListener('click', exportarCsv);
+        document.getElementById('searchImoveis').addEventListener('input', (e) => listarImoveis(e.target.value));
+
+        // Setup Galeria
+        document.getElementById('uploadArea').addEventListener('click', () => document.getElementById('fileInput').click());
+        document.getElementById('fileInput').addEventListener('change', (e) => handleGalleryUpload(e.target.files));
+        document.querySelector('.modal-close').addEventListener('click', fecharModalEdicao);
+
+        // Setup Clientes
+        document.getElementById('formClientes').addEventListener('submit', processarCadastroCliente);
+        document.getElementById('btnLimparCliente').addEventListener('click', () => document.getElementById('formClientes').reset());
+
+        // Setup Visitas
+        document.getElementById('formVisitas').addEventListener('submit', processarAgendamentoVisita);
+        document.getElementById('btnLimparVisita').addEventListener('click', () => document.getElementById('formVisitas').reset());
+
+        // Setup Drag and Drop na Galeria (simulação de upload direto para um Imóvel genérico ou edição futura)
+        // Por enquanto, o upload da Galeria (uploadArea) não será implementado com a lógica, apenas o "handleGalleryUpload" simples.
+
+        function handleGalleryUpload(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Simulação: Adiciona a foto ao primeiro imóvel disponível para que ela apareça na Galeria
+                        let imoveis = carregar(IMOVEIS_KEY);
+                        if (imoveis.length > 0) {
+                            imoveis[0].fotos = imoveis[0].fotos || [];
+                            imoveis[0].fotos.push({
+                                id: gerarIdUnico(),
+                                url: e.target.result,
+                                descricao: `Foto adicionada diretamente na Galeria.`,
+                                valor: null
+                            });
+                            salvar(IMOVEIS_KEY, imoveis);
+                            mostrarAlerta('alertGaleria', `Foto adicionada ao imóvel ${imoveis[0].endereco.split(',')[0].trim()}`, 'success');
+                            listarFotos();
+                        } else {
+                            mostrarAlerta('alertGaleria', 'Nenhum imóvel para anexar a foto. Use a aba Cadastro.', 'error');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+
+        // Chamadas Iniciais
+        trocarAba('cadastro'); // Começa na aba de cadastro
         calcularEstatisticas();
     }
     
-    // initApp(); // Descomente esta linha se ela não estiver no seu código original
+    // Inicia a aplicação
+    document.addEventListener('DOMContentLoaded', initApp);
 
   </script>
 </body>
