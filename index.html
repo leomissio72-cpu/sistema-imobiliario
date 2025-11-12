@@ -407,6 +407,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
     }
     .preview-item .remove-btn {
       position: absolute;
@@ -1287,21 +1288,34 @@
       'vendas-corretor': 'Vendas por Corretor'
     };
 
-    // Função principal para trocar de aba
+    // Função principal para trocar de aba - CORRIGIDA
     function trocarAba(tabId) {
+      console.log('Trocando para aba:', tabId);
+      
+      // Remove a classe active de todos os botões
       document.querySelectorAll('.nav-btn').forEach(b => {
         b.classList.remove('active');
       });
+      
+      // Adiciona a classe active ao botão clicado
       const btnAtivo = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
       if (btnAtivo) {
         btnAtivo.classList.add('active');
       }
+      
+      // Esconde todas as abas
       document.querySelectorAll('.tab-content').forEach(t => {
         t.classList.remove('active');
       });
+      
+      // Mostra apenas a aba selecionada
       const abaAtiva = document.getElementById(tabId);
       if (abaAtiva) {
         abaAtiva.classList.add('active');
+        
+        // Atualiza o título da página
+        document.getElementById('pageTitle').textContent = pageTitles[tabId] || 'Sistema Imobiliário';
+        
         // Chama a função de atualização específica para cada aba
         switch(tabId) {
           case 'dashboard':
@@ -1330,15 +1344,18 @@
             break;
         }
       }
-      document.getElementById('pageTitle').textContent = pageTitles[tabId] || 'Sistema Imobiliário';
     }
 
     // ========== INICIALIZAÇÃO GERAL ==========
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM carregado, inicializando sistema...');
+      
+      // Configura os event listeners para os botões de navegação
       document.querySelectorAll('.nav-btn').forEach(button => {
         button.addEventListener('click', (e) => {
           e.preventDefault();
           const tab = e.currentTarget.getAttribute('data-tab');
+          console.log('Botão clicado:', tab);
           trocarAba(tab);
         });
       });
@@ -1370,10 +1387,10 @@
         iptu: parseFloat(form.iptu.value) || 0,
         status: form.status.value,
         proprietario: form.proprietario.value,
-        vendedor: form.vendedor.value, // Novo campo
+        vendedor: form.vendedor.value,
         observacoes: form.observacoes.value,
         fotos: fotosCadastro,
-        dataVenda: (form.status.value === 'Vendido' ? new Date().toISOString().split('T')[0] : null) // Registra data da venda
+        dataVenda: (form.status.value === 'Vendido' ? new Date().toISOString().split('T')[0] : null)
       };
       const imoveis = carregar(IMOVEIS_KEY);
       imoveis.push(imovel);
@@ -1395,7 +1412,7 @@
       form.reset();
       fotosCadastro = [];
       renderPreviewCadastro();
-      atualizarDashboard(); // Atualiza o dashboard após o cadastro
+      atualizarDashboard();
     });
 
     document.getElementById('btnLimparForm').addEventListener('click', function() {
@@ -1485,7 +1502,7 @@
         previewGridCadastro.appendChild(div);
       });
     }
-    renderPreviewCadastro(); // Renderiza o preview inicial (vazio)
+    renderPreviewCadastro();
 
     // ========== IMÓVEIS CADASTRADOS ==========
     function aplicarFiltrosImoveis() {
@@ -1502,9 +1519,9 @@
         );
         const matchesTipo = filtroTipo === '' || i.tipo === filtroTipo;
         const matchesStatus = filtroStatus === '' || i.status === filtroStatus;
-        const matchesValor = i.valor >= filtroValorMin &amp;&amp; i.valor <= filtroValorMax;
+        const matchesValor = i.valor >= filtroValorMin && i.valor <= filtroValorMax;
 
-        return matchesText &amp;&amp; matchesTipo &amp;&amp; matchesStatus &amp;&amp; matchesValor;
+        return matchesText && matchesTipo && matchesStatus && matchesValor;
       });
       renderizarTabelaImoveis(imoveisFiltrados);
     }
@@ -1578,9 +1595,9 @@
         visitas = visitas.filter(v => v.imovelId !== id);
         salvar(VISITAS_KEY, visitas);
 
-        aplicarFiltrosImoveis(); // Re-aplica filtros para atualizar a lista
+        aplicarFiltrosImoveis();
         mostrarAlerta('listaImoveis', 'Imóvel e dados associados deletados.', 'error');
-        atualizarDashboard(); // Atualiza o dashboard
+        atualizarDashboard();
       }
     }
 
@@ -1592,14 +1609,14 @@
 
       if (imovelIndex > -1) {
         imoveis[imovelIndex].status = novoStatus;
-        if (novoStatus === 'Vendido' &amp;&amp; !imoveis[imovelIndex].dataVenda) {
+        if (novoStatus === 'Vendido' && !imoveis[imovelIndex].dataVenda) {
           imoveis[imovelIndex].dataVenda = new Date().toISOString().split('T')[0];
         } else if (novoStatus !== 'Vendido') {
-          imoveis[imovelIndex].dataVenda = null; // Limpa a data se não for vendido
+          imoveis[imovelIndex].dataVenda = null;
         }
         salvar(IMOVEIS_KEY, imoveis);
         mostrarAlerta('alertImoveis', `Status do imóvel atualizado para "${novoStatus}".`, 'success');
-        atualizarDashboard(); // Atualiza o dashboard
+        atualizarDashboard();
       }
     }
 
@@ -1626,7 +1643,7 @@
       }
       const headers = Object.keys(imoveis[0]).join(',');
       const rows = imoveis.map(i => Object.values(i).map(v => 
-          (typeof v === 'string' &amp;&amp; v.includes(',')) ? `"${v}"` : v
+          (typeof v === 'string' && v.includes(',')) ? `"${v}"` : v
       ).join(','));
       const csv = [headers, ...rows].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1668,9 +1685,9 @@
             fotos.push({
               id: gerarIdUnico(),
               dataUrl: e.target.result,
-              valor: 0, // Valor padrão, pode ser editado depois
+              valor: 0,
               descricao: 'Nova foto na galeria',
-              imovelId: null // Pode ser associado a um imóvel depois
+              imovelId: null
             });
             salvar(FOTOS_KEY, fotos);
             count++;
@@ -1798,7 +1815,7 @@
       mostrarAlerta('alertClientes', 'Cliente salvo com sucesso!', 'success');
       form.reset();
       listarClientes();
-      atualizarDashboard(); // Atualiza o dashboard
+      atualizarDashboard();
     });
 
     document.getElementById('btnLimparCliente').addEventListener('click', function() {
@@ -1856,7 +1873,7 @@
 
         listarClientes();
         mostrarAlerta('listaClientes', 'Cliente deletado.', 'error');
-        atualizarDashboard(); // Atualiza o dashboard
+        atualizarDashboard();
       }
     }
 
@@ -1896,7 +1913,7 @@
       mostrarAlerta('alertVisitas', 'Visita agendada com sucesso!', 'success');
       form.reset();
       listarVisitas();
-      atualizarDashboard(); // Atualiza o dashboard
+      atualizarDashboard();
     });
 
     document.getElementById('btnLimparVisita').addEventListener('click', function() {
@@ -1952,7 +1969,7 @@
         visitas = visitas.filter(v => v.id !== id);
         salvar(VISITAS_KEY, visitas);
         listarVisitas();
-        atualizarDashboard(); // Atualiza o dashboard
+        atualizarDashboard();
       }
     }
 
@@ -2024,18 +2041,16 @@
         localStorage.removeItem(CLIENTES_KEY);
         localStorage.removeItem(VISITAS_KEY);
         localStorage.removeItem(FOTOS_KEY);
-        fotosCadastro = []; // Limpa array temporário
-        renderPreviewCadastro(); // Limpa preview do cadastro
-        // Atualiza as listas e selects em todas as abas
+        fotosCadastro = [];
+        renderPreviewCadastro();
         listarImoveis();
         listarClientes();
         listarVisitas();
         listarFotos();
         preencherSelectsVisitas();
-        atualizarEstatisticas(); // Atualiza estatísticas
-        atualizarDashboard(); // Atualiza o dashboard
+        atualizarEstatisticas();
+        atualizarDashboard();
         alert('Todos os dados foram removidos com sucesso!');
-        // Retorna para a aba de Cadastro
         trocarAba('cadastro');
       }
     });
@@ -2092,7 +2107,7 @@
                 datasets: [{
                     label: 'Imóveis Vendidos',
                     data: data,
-                    backgroundColor: labels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`), // Cores dinâmicas
+                    backgroundColor: labels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`),
                     borderColor: labels.map((_, i) => `hsl(${i * 60}, 70%, 40%)`),
                     borderWidth: 1
                 }]
@@ -2140,7 +2155,7 @@
                     label: 'Quantidade',
                     data: data,
                     backgroundColor: labels.map((_, i) => `hsl(${i * 45}, 80%, 60%)`),
-                    borderColor: 'var(--card)',
+                    borderColor: '#ffffff',
                     borderWidth: 1
                 }]
             },
@@ -2185,7 +2200,7 @@
                     label: 'Quantidade',
                     data: data,
                     backgroundColor: labels.map(label => backgroundColors[label] || '#cccccc'),
-                    borderColor: 'var(--card)',
+                    borderColor: '#ffffff',
                     borderWidth: 1
                 }]
             },
@@ -2206,10 +2221,9 @@
     }
 
     function renderVendasMensaisChart(imoveisVendidos) {
-        // Agrupa vendas por mês
         const vendasPorMes = imoveisVendidos.reduce((acc, imovel) => {
             if (imovel.dataVenda) {
-                const mes = imovel.dataVenda.substring(0, 7); // Formato YYYY-MM
+                const mes = imovel.dataVenda.substring(0, 7);
                 acc[mes] = (acc[mes] || 0) + 1;
             }
             return acc;
@@ -2259,7 +2273,6 @@
         const periodo = document.getElementById('periodoVendas').value;
         const imoveis = carregar(IMOVEIS_KEY);
         
-        // Filtra imóveis vendidos por período
         let imoveisVendidos = imoveis.filter(i => i.status === 'Vendido');
         
         if (periodo !== 'todos') {
@@ -2285,7 +2298,6 @@
             });
         }
         
-        // Agrupa por vendedor
         const vendasPorCorretor = imoveisVendidos.reduce((acc, imovel) => {
             const vendedor = imovel.vendedor || 'Não Atribuído';
             if (!acc[vendedor]) {
@@ -2301,10 +2313,7 @@
             return acc;
         }, {});
         
-        // Renderiza o gráfico
         renderVendasCorretorChart(vendasPorCorretor);
-        
-        // Renderiza a tabela
         renderTabelaVendasCorretor(vendasPorCorretor);
     }
 
@@ -2424,7 +2433,7 @@
 
     window.mostrarDetalhesVendedor = function(vendedor) {
         const imoveis = carregar(IMOVEIS_KEY);
-        const imoveisVendedor = imoveis.filter(i => i.vendedor === vendedor &amp;&amp; i.status === 'Vendido');
+        const imoveisVendedor = imoveis.filter(i => i.vendedor === vendedor && i.status === 'Vendido');
         
         let detalhes = `Detalhes das vendas de ${vendedor}:\n\n`;
         imoveisVendedor.forEach(imovel => {
@@ -2440,7 +2449,6 @@
         const periodo = document.getElementById('periodoVendas').value;
         const imoveis = carregar(IMOVEIS_KEY);
         
-        // Filtra imóveis vendidos por período
         let imoveisVendidos = imoveis.filter(i => i.status === 'Vendido');
         
         if (periodo !== 'todos') {
@@ -2466,7 +2474,6 @@
             });
         }
         
-        // Cria CSV
         const headers = ['Vendedor', 'Tipo', 'Endereço', 'Valor', 'Data Venda'];
         const rows = imoveisVendidos.map(i => [
             i.vendedor || 'Não Atribuído',
@@ -2477,7 +2484,7 @@
         ]);
         
         const csv = [headers, ...rows].map(row => 
-            row.map(cell => (typeof cell === 'string' &amp;&amp; cell.includes(',')) ? `"${cell}"` : cell).join(',')
+            row.map(cell => (typeof cell === 'string' && cell.includes(',')) ? `"${cell}"` : cell).join(',')
         ).join('\n');
         
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -2494,14 +2501,12 @@
         const imoveis = carregar(IMOVEIS_KEY);
         const clientes = carregar(CLIENTES_KEY);
         
-        // Só adiciona dados de exemplo se não houver dados
-        if (imoveis.length === 0 &amp;&amp; clientes.length === 0) {
+        if (imoveis.length === 0 && clientes.length === 0) {
             adicionarDadosExemplo();
         }
     }
 
     function adicionarDadosExemplo() {
-        // Dados de exemplo para imóveis
         const imoveisExemplo = [
             {
                 id: gerarIdUnico(),
@@ -2568,7 +2573,6 @@
             }
         ];
         
-        // Dados de exemplo para clientes
         const clientesExemplo = [
             {
                 id: gerarIdUnico(),
@@ -2592,11 +2596,9 @@
             }
         ];
         
-        // Salva os dados de exemplo
         salvar(IMOVEIS_KEY, imoveisExemplo);
         salvar(CLIENTES_KEY, clientesExemplo);
         
-        // Atualiza as visualizações
         atualizarDashboard();
         listarImoveis();
         listarClientes();
