@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema Imobiliário</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Chart.js para os gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
   <style>
     :root {
       --bg: #f4f6fb;
@@ -18,18 +21,31 @@
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
+      --text-dark: #0f172a;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
-      color: #0f172a;
+      color: var(--text-dark);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
     .app {
       display: flex;
       min-height: 100vh;
+      width: 100%;
+      max-width: 1400px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
     }
 
+    /* SIDEBAR */
     .sidebar {
       width: 260px;
       padding: 20px;
@@ -121,6 +137,7 @@
       text-overflow: ellipsis;
     }
 
+    /* WORKSPACE */
     .workspace {
       flex: 1;
       display: flex;
@@ -139,7 +156,7 @@
     .page-title {
       font-size: 20px;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--text-dark);
     }
     .user-area {
       display: flex;
@@ -155,6 +172,7 @@
       align-items: center;
       justify-content: center;
       font-size: 20px;
+      color: #fff;
     }
     .main-area {
       padding: 24px;
@@ -170,8 +188,11 @@
     }
     h2 {
       margin: 0 0 16px 0;
-      color: #0f172a;
+      color: var(--text-dark);
       font-size: 18px;
+    }
+    h3 {
+      color: var(--text-dark);
     }
     .grid {
       display: grid;
@@ -194,7 +215,7 @@
       border-radius: 8px;
       border: 1px solid rgba(15, 23, 42, 0.1);
       background: #fff;
-      color: #0f172a;
+      color: var(--text-dark);
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       transition: border-color 0.2s;
@@ -238,7 +259,7 @@
     .btn.ghost {
       background: transparent;
       border: 1px solid rgba(15, 23, 42, 0.1);
-      color: #0f172a;
+      color: var(--text-dark);
     }
     .btn.danger {
       background: var(--danger);
@@ -305,31 +326,48 @@
       background: #fff;
       border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
+      overflow: hidden;
       transition: all 0.2s;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     .card-imovel:hover {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transform: translateY(-2px);
     }
-    .card-imovel h3 {
+    .card-imovel img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+    .card-imovel-info {
+      padding: 16px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-imovel-info h3 {
       margin: 0 0 8px 0;
-      color: #0f172a;
+      color: var(--text-dark);
       font-size: 16px;
     }
-    .card-imovel p {
+    .card-imovel-info p {
       margin: 4px 0;
       color: var(--muted);
       font-size: 13px;
     }
-    .card-imovel .price {
+    .card-imovel-info .price {
       font-size: 18px;
       font-weight: 700;
       color: var(--primary);
       margin: 8px 0;
+      margin-top: auto;
     }
 
+    /* UPLOAD DE FOTOS NO CADASTRO */
     .upload-box {
       border: 2px dashed rgba(15, 23, 42, 0.2);
       border-radius: 12px;
@@ -392,6 +430,7 @@
       opacity: 1;
     }
 
+    /* GALERIA DE FOTOS */
     .upload-area {
       border: 2px dashed rgba(15, 23, 42, 0.2);
       border-radius: 12px;
@@ -514,7 +553,7 @@
     }
     .modal-close:hover {
       background: rgba(15, 23, 42, 0.05);
-      color: #0f172a;
+      color: var(--text-dark);
     }
     .modal img {
       width: 100%;
@@ -522,6 +561,52 @@
       margin-bottom: 16px;
     }
 
+    /* Dashboard specific styles */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .stat-card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 18px;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .stat-card .label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    .stat-card .value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    .chart-container {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+        height: 400px; /* Altura fixa para os gráficos */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .chart-container canvas {
+        max-height: 100%;
+        max-width: 100%;
+    }
+
+    /* Responsive */
     @media (max-width: 768px) {
       .sidebar {
         width: 70px;
@@ -575,8 +660,13 @@
       .preview-grid {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
       }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-container {
+        height: 300px; /* Ajusta a altura dos gráficos para telas menores */
+      }
     }
-
     @media (max-width: 480px) {
       .actions {
         flex-direction: column;
@@ -597,7 +687,6 @@
         padding: 16px;
       }
     }
-
     .tab-content {
       display: none;
     }
@@ -617,7 +706,11 @@
         </div>
       </div>
       <nav>
-        <button class="nav-btn active" data-tab="cadastro">
+        <button class="nav-btn active" data-tab="dashboard">
+          <span class="material-icons">dashboard</span>
+          <span class="label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-tab="cadastro">
           <span class="material-icons">add_home</span>
           <span class="label">Cadastro</span>
         </button>
@@ -651,10 +744,9 @@
         </div>
       </div>
     </aside>
-
     <div class="workspace">
       <div class="topbar">
-        <div class="page-title" id="pageTitle">Cadastro de Imóvel</div>
+        <div class="page-title" id="pageTitle">Dashboard</div>
         <div class="user-area">
           <div class="user-info" style="text-align:right">
             <div style="font-weight:700;font-size:14px">Sistema Local</div>
@@ -663,9 +755,59 @@
           <div class="avatar">🏢</div>
         </div>
       </div>
-
       <main class="main-area">
-        <section id="cadastro" class="tab-content active">
+
+        <!-- Dashboard Tab -->
+        <section id="dashboard" class="tab-content active">
+          <div class="container">
+            <h2>Dashboard de Performance</h2>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="label">Total de Imóveis</div>
+                <div class="value" id="totalImoveis">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Valor Total da Carteira</div>
+                <div class="value" id="valorTotalCarteira">R$ 0,00</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Imóveis Vendidos</div>
+                <div class="value" id="imoveisVendidos">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Valor Total Vendido</div>
+                <div class="value" id="valorTotalVendido">R$ 0,00</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Média de Preço de Venda</div>
+                <div class="value" id="mediaPrecoVenda">R$ 0,00</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Total de Clientes</div>
+                <div class="value" id="totalClientes">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Total de Visitas</div>
+                <div class="value" id="totalVisitas">0</div>
+              </div>
+            </div>
+
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <div class="chart-container">
+                    <canvas id="vendasPorVendedorChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="imoveisPorTipoChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="statusImoveisChart"></canvas>
+                </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cadastro Tab -->
+        <section id="cadastro" class="tab-content">
           <div class="container">
             <h2>Cadastro de Imóvel</h2>
             <div id="alertCadastro"></div>
@@ -741,16 +883,19 @@
                   <label>Proprietário</label>
                   <input name="proprietario" type="text" placeholder="Nome do proprietário">
                 </div>
+                <div>
+                  <label>Vendedor Responsável</label>
+                  <input name="vendedor" type="text" placeholder="Nome do vendedor">
+                </div>
                 <div class="col-full">
                   <label>Características / Observações</label>
                   <textarea name="observacoes" placeholder="Ex: Piscina, churrasqueira, armários embutidos, etc."></textarea>
                 </div>
-
                 <div class="col-full">
                   <label>Fotos do Imóvel</label>
                   <div class="upload-box" id="uploadBoxCadastro">
                     <span class="material-icons" style="font-size:48px;color:var(--primary);margin-bottom:12px">add_photo_alternate</span>
-                    <p style="font-size:16px;font-weight:600;margin-bottom:8px;color:#0f172a">Clique ou arraste fotos aqui</p>
+                    <p style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text-dark)">Clique ou arraste fotos aqui</p>
                     <p style="font-size:13px;color:var(--muted)">JPG, PNG, GIF (máx. 5MB cada)</p>
                     <input type="file" id="fileInputCadastro" accept="image/*" multiple style="display:none">
                   </div>
@@ -764,45 +909,95 @@
                 <button type="button" class="btn ghost" id="btnLimparForm">
                   <span class="material-icons">clear</span> Limpar Formulário
                 </button>
-                <button type="button" class="btn success" id="btnExportPdf">
-                  <span class="material-icons">picture_as_pdf</span> Exportar Ficha (PDF)
+                <button type="button" class="btn ghost" id="btnExportPdfFicha">
+                  <span class="material-icons">picture_as_pdf</span> Exportar Ficha PDF
                 </button>
               </div>
             </form>
           </div>
         </section>
 
+        <!-- Imóveis Tab -->
         <section id="imoveis" class="tab-content">
           <div class="container">
             <h2>Imóveis Cadastrados</h2>
-            <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-              <input type="text" id="searchImoveis" placeholder="Pesquisar imóveis..." style="flex:1;min-width:200px">
-              <button class="btn primary" id="btnRefreshImoveis">
-                <span class="material-icons">refresh</span> Atualizar
+            <div id="alertImoveis"></div>
+            <div class="actions">
+              <label style="flex:1">
+                Pesquisar Imóveis
+                <input type="text" id="searchImoveis" placeholder="Buscar por endereço, tipo, etc.">
+              </label>
+              <label style="flex:1">
+                Tipo de Residência
+                <select id="filterTipoImovel">
+                  <option value="">Todos</option>
+                  <option value="Casa">Casa</option>
+                  <option value="Apartamento">Apartamento</option>
+                  <option value="Terreno">Terreno</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="Rural">Rural</option>
+                  <option value="Galpão">Galpão</option>
+                  <option value="Cobertura">Cobertura</option>
+                </select>
+              </label>
+              <label style="flex:1">
+                Status
+                <select id="filterStatusImovel">
+                  <option value="">Todos</option>
+                  <option value="Disponível">Disponível</option>
+                  <option value="Alugado">Alugado</option>
+                  <option value="Vendido">Vendido</option>
+                  <option value="Reservado">Reservado</option>
+                </select>
+              </label>
+              <label style="flex:1">
+                Valor Mínimo
+                <input type="number" id="filterValorMin" placeholder="R$ 0,00">
+              </label>
+              <label style="flex:1">
+                Valor Máximo
+                <input type="number" id="filterValorMax" placeholder="R$ 999.999.999,00">
+              </label>
+              <button type="button" class="btn primary" id="btnAplicarFiltros" style="margin-top:auto;">
+                <span class="material-icons">filter_alt</span> Aplicar Filtros
               </button>
-              <button class="btn success" id="btnExportCsv">
+              <button type="button" class="btn ghost" id="btnLimparFiltros" style="margin-top:auto;">
+                <span class="material-icons">clear</span> Limpar Filtros
+              </button>
+              <button type="button" class="btn ghost" id="btnExportCsv" style="margin-top:auto;">
                 <span class="material-icons">download</span> Exportar CSV
               </button>
             </div>
-            <div id="listaImoveis"></div>
+            <div id="listaImoveis">
+              <div class="no-data">Nenhum imóvel cadastrado.</div>
+            </div>
           </div>
         </section>
 
+        <!-- Galeria Tab -->
         <section id="galeria" class="tab-content">
           <div class="container">
             <h2>Galeria de Fotos (<span id="photoCount">0</span> fotos)</h2>
             <div id="alertGaleria"></div>
-            <input type="text" id="searchGaleria" placeholder="Pesquisar fotos..." style="margin-bottom:16px">
             <div class="upload-area" id="uploadArea">
-              <span class="material-icons" style="font-size:64px;color:var(--primary);margin-bottom:16px">cloud_upload</span>
-              <h3 style="margin:0 0 8px 0">Adicionar Fotos à Galeria</h3>
-              <p style="color:var(--muted);font-size:14px">Clique ou arraste imagens aqui</p>
+              <span class="material-icons" style="font-size:48px;color:var(--primary);margin-bottom:12px">cloud_upload</span>
+              <p style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text-dark)">Arraste e solte fotos aqui ou clique para selecionar</p>
+              <p style="font-size:13px;color:var(--muted)">JPG, PNG, GIF (máx. 5MB cada)</p>
               <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
             </div>
-            <div class="gallery-grid" id="galleryGrid"></div>
+            <div class="actions" style="margin-top:20px;">
+              <label style="flex:1">
+                Pesquisar Fotos
+                <input type="text" id="searchGaleria" placeholder="Buscar por descrição, imóvel ID, etc.">
+              </label>
+            </div>
+            <div class="gallery-grid" id="galleryGrid">
+              <div class="col-full no-data">Nenhuma foto na galeria.</div>
+            </div>
           </div>
         </section>
 
+        <!-- Clientes Tab -->
         <section id="clientes" class="tab-content">
           <div class="container">
             <h2>Cadastro de Clientes</h2>
@@ -814,28 +1009,24 @@
                   <input name="nome" type="text" required>
                 </div>
                 <div>
-                  <label>CPF/CNPJ</label>
-                  <input name="documento" type="text">
+                  <label>Documento (CPF/CNPJ)</label>
+                  <input name="documento" type="text" placeholder="Ex: 123.456.789-00">
                 </div>
                 <div>
                   <label>Telefone *</label>
-                  <input name="telefone" type="tel" required>
+                  <input name="telefone" type="tel" required placeholder="Ex: (99) 99999-9999">
                 </div>
                 <div>
-                  <label>E-mail</label>
-                  <input name="email" type="email">
+                  <label>Email</label>
+                  <input name="email" type="email" placeholder="email@exemplo.com">
                 </div>
-                <div>
-                  <label>Interesse</label>
-                  <select name="interesse">
-                    <option value="Compra">Compra</option>
-                    <option value="Aluguel">Aluguel</option>
-                    <option value="Venda">Venda</option>
-                  </select>
+                <div class="col-full">
+                  <label>Interesse (Tipo de Imóvel, Localização, etc.)</label>
+                  <input name="interesse" type="text" placeholder="Ex: Casa com 3 quartos em Centro">
                 </div>
                 <div class="col-full">
                   <label>Observações</label>
-                  <textarea name="observacoes"></textarea>
+                  <textarea name="observacoes" placeholder="Informações adicionais sobre o cliente"></textarea>
                 </div>
               </div>
               <div class="actions">
@@ -843,17 +1034,20 @@
                   <span class="material-icons">person_add</span> Salvar Cliente
                 </button>
                 <button type="button" class="btn ghost" id="btnLimparCliente">
-                  <span class="material-icons">clear</span> Limpar
+                  <span class="material-icons">clear</span> Limpar Formulário
                 </button>
               </div>
             </form>
           </div>
           <div class="container">
             <h2>Clientes Cadastrados</h2>
-            <div id="listaClientes"></div>
+            <div id="listaClientes">
+              <div class="no-data">Nenhum cliente cadastrado.</div>
+            </div>
           </div>
         </section>
 
+        <!-- Visitas Tab -->
         <section id="visitas" class="tab-content">
           <div class="container">
             <h2>Agendar Visita</h2>
@@ -873,117 +1067,126 @@
                   </select>
                 </div>
                 <div>
-                  <label>Data *</label>
+                  <label>Data da Visita *</label>
                   <input name="data" type="date" required>
                 </div>
                 <div>
-                  <label>Horário *</label>
+                  <label>Horário da Visita *</label>
                   <input name="horario" type="time" required>
                 </div>
                 <div class="col-full">
                   <label>Observações</label>
-                  <textarea name="observacoes"></textarea>
+                  <textarea name="observacoes" placeholder="Detalhes da visita, pontos de interesse, etc."></textarea>
                 </div>
               </div>
               <div class="actions">
                 <button type="submit" class="btn primary">
-                  <span class="material-icons">event</span> Agendar Visita
+                  <span class="material-icons">event_available</span> Agendar Visita
                 </button>
                 <button type="button" class="btn ghost" id="btnLimparVisita">
-                  <span class="material-icons">clear</span> Limpar
+                  <span class="material-icons">clear</span> Limpar Formulário
                 </button>
               </div>
             </form>
           </div>
           <div class="container">
             <h2>Visitas Agendadas</h2>
-            <div id="listaVisitas"></div>
-          </div>
-        </section>
-
-        <section id="ferramentas" class="tab-content">
-          <div class="container">
-            <h2>Ferramentas Úteis</h2>
-            <div class="grid">
-              <div class="container" style="margin:0">
-                <h3 style="font-size:16px;margin-bottom:12px">💰 Simulador de Financiamento</h3>
-                <div style="margin-bottom:10px">
-                  <label>Valor do Imóvel (R$)</label>
-                  <input type="number" id="valorImovel" placeholder="0.00" step="0.01">
-                </div>
-                <div style="margin-bottom:10px">
-                  <label>Entrada (R$)</label>
-                  <input type="number" id="entrada" placeholder="0.00" step="0.01">
-                </div>
-                <div style="margin-bottom:10px">
-                  <label>Taxa de Juros (% ao ano)</label>
-                  <input type="number" id="taxaJuros" placeholder="8.5" step="0.01">
-                </div>
-                <div style="margin-bottom:10px">
-                  <label>Prazo (meses)</label>
-                  <input type="number" id="prazo" placeholder="360">
-                </div>
-                <button class="btn primary" onclick="calcularFinanciamento()">
-                  <span class="material-icons">calculate</span> Calcular
-                </button>
-                <div id="resultadoFinanciamento" style="margin-top:16px;padding:12px;background:rgba(59,130,246,0.05);border-radius:8px;display:none">
-                  <strong>Resultado:</strong>
-                  <div style="margin-top:8px;font-size:14px" id="resultadoTexto"></div>
-                </div>
-              </div>
-
-              <div class="container" style="margin:0">
-                <h3 style="font-size:16px;margin-bottom:12px">📊 Estatísticas</h3>
-                <div id="estatisticas"></div>
-              </div>
+            <div id="listaVisitas">
+              <div class="no-data">Nenhuma visita agendada.</div>
             </div>
           </div>
         </section>
+
+        <!-- Ferramentas Tab -->
+        <section id="ferramentas" class="tab-content">
+          <div class="container">
+            <h2>Calculadora de Financiamento</h2>
+            <div class="grid">
+              <div>
+                <label>Valor do Imóvel (R$)</label>
+                <input type="number" id="valorImovel" step="0.01" value="300000">
+              </div>
+              <div>
+                <label>Valor da Entrada (R$)</label>
+                <input type="number" id="entrada" step="0.01" value="60000">
+              </div>
+              <div>
+                <label>Taxa de Juros Anual (%)</label>
+                <input type="number" id="taxaJuros" step="0.01" value="8.5">
+              </div>
+              <div>
+                <label>Prazo (meses)</label>
+                <input type="number" id="prazo" value="360">
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn primary" onclick="calcularFinanciamento()">
+                <span class="material-icons">calculate</span> Calcular
+              </button>
+            </div>
+            <div id="resultadoFinanciamento" class="container" style="display:none; margin-top:20px; padding:16px;">
+              <h3>Resultado do Financiamento</h3>
+              <div id="resultadoTexto" style="line-height:1.8;"></div>
+            </div>
+          </div>
+
+          <div class="container">
+            <h2>Estatísticas Rápidas</h2>
+            <div id="estatisticas">
+              <div class="no-data">Carregando estatísticas...</div>
+            </div>
+          </div>
+
+          <div class="container">
+            <h2>Limpeza de Dados</h2>
+            <p style="color:var(--muted); margin-bottom:15px;">
+              Cuidado! Esta ação irá apagar TODOS os dados salvos no seu navegador.
+            </p>
+            <button class="btn danger" id="btnLimparTodos">
+              <span class="material-icons">delete_forever</span> Apagar Todos os Dados
+            </button>
+          </div>
+        </section>
+
       </main>
     </div>
-  </div>
 
-  <div class="modal" id="editModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Editar Foto</h3>
-        <button class="modal-close">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      <img id="modalImage" src="" alt="Foto">
-      <div>
+    <!-- Modal de Edição de Foto -->
+    <div class="modal" id="editModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Editar Foto</h3>
+          <button class="modal-close"><span class="material-icons">close</span></button>
+        </div>
+        <img id="modalImage" src="" alt="Foto em Edição">
         <label>Valor (R$)</label>
-        <input type="number" id="modalValor" step="0.01" placeholder="Ex: 350000">
-      </div>
-      <div style="margin-top:12px">
+        <input type="number" id="modalValor" step="0.01">
         <label>Descrição</label>
-        <textarea id="modalDescricao" placeholder="Descreva o imóvel..."></textarea>
-      </div>
-      <div class="actions">
-        <button class="btn primary" onclick="salvarEdicao()">
-          <span class="material-icons">save</span> Salvar
-        </button>
-        <button class="btn ghost" onclick="fecharModalEdicao()">
-          Cancelar
-        </button>
+        <textarea id="modalDescricao"></textarea>
+        <div class="actions">
+          <button class="btn primary" onclick="salvarEdicao()">Salvar Alterações</button>
+          <button class="btn ghost" onclick="fecharModalEdicao()">Cancelar</button>
+        </div>
       </div>
     </div>
+
   </div>
 
   <script>
-    const IMOVEIS_KEY = 'imoveis_data';
-    const CLIENTES_KEY = 'clientes_data';
-    const VISITAS_KEY = 'visitas_data';
-    const FOTOS_KEY = 'fotos_data';
+    // Constantes para chaves do localStorage
+    const IMOVEIS_KEY = 'imoveisData';
+    const CLIENTES_KEY = 'clientesData';
+    const VISITAS_KEY = 'visitasData';
+    const FOTOS_KEY = 'fotosData';
 
+    // Variáveis para gráficos (para poder destruí-los e recriá-los)
+    let vendasPorVendedorChart = null;
+    let imoveisPorTipoChart = null;
+    let statusImoveisChart = null;
+
+    // Funções utilitárias
     function salvar(key, data) {
-      try {
-        localStorage.setItem(key, JSON.stringify(data));
-      } catch (e) {
-        console.error('Erro ao salvar dados:', e);
-        alert('Erro ao salvar dados. Verifique o espaço disponível no navegador.');
-      }
+      localStorage.setItem(key, JSON.stringify(data));
     }
 
     function carregar(key) {
@@ -996,8 +1199,8 @@
       }
     }
 
-    let fotosCadastro = [];
-    let fotoEditando = null;
+    let fotosCadastro = []; // Fotos temporárias para o formulário de cadastro
+    let fotoEditando = null; // Foto sendo editada no modal
 
     function mostrarAlerta(containerId, mensagem, tipo) {
       const container = document.getElementById(containerId);
@@ -1026,6 +1229,7 @@
     }
 
     const pageTitles = {
+      'dashboard': 'Dashboard de Performance',
       'cadastro': 'Cadastro de Imóvel',
       'imoveis': 'Imóveis Cadastrados',
       'galeria': 'Galeria de Fotos',
@@ -1034,24 +1238,26 @@
       'ferramentas': 'Ferramentas'
     };
 
+    // Função principal para trocar de aba
     function trocarAba(tabId) {
       document.querySelectorAll('.nav-btn').forEach(b => {
         b.classList.remove('active');
       });
-
       const btnAtivo = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
       if (btnAtivo) {
         btnAtivo.classList.add('active');
       }
-
       document.querySelectorAll('.tab-content').forEach(t => {
         t.classList.remove('active');
       });
-
       const abaAtiva = document.getElementById(tabId);
       if (abaAtiva) {
         abaAtiva.classList.add('active');
+        // Chama a função de atualização específica para cada aba
         switch(tabId) {
+          case 'dashboard':
+            atualizarDashboard();
+            break;
           case 'imoveis':
             listarImoveis();
             break;
@@ -1075,6 +1281,7 @@
       document.getElementById('pageTitle').textContent = pageTitles[tabId] || 'Sistema Imobiliário';
     }
 
+    // ========== INICIALIZAÇÃO GERAL ==========
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.nav-btn').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -1084,9 +1291,11 @@
         });
       });
 
-      trocarAba('cadastro');
+      // Inicia na aba Dashboard
+      trocarAba('dashboard'); 
     });
 
+    // ========== CADASTRO DE IMÓVEL ==========
     document.getElementById('formCadastro').addEventListener('submit', function(e) {
       e.preventDefault();
       const form = e.target;
@@ -1106,8 +1315,10 @@
         iptu: parseFloat(form.iptu.value) || 0,
         status: form.status.value,
         proprietario: form.proprietario.value,
+        vendedor: form.vendedor.value, // Novo campo
         observacoes: form.observacoes.value,
-        fotos: fotosCadastro
+        fotos: fotosCadastro,
+        dataVenda: (form.status.value === 'Vendido' ? new Date().toISOString().split('T')[0] : null) // Registra data da venda
       };
       const imoveis = carregar(IMOVEIS_KEY);
       imoveis.push(imovel);
@@ -1129,6 +1340,7 @@
       form.reset();
       fotosCadastro = [];
       renderPreviewCadastro();
+      atualizarDashboard(); // Atualiza o dashboard após o cadastro
     });
 
     document.getElementById('btnLimparForm').addEventListener('click', function() {
@@ -1138,100 +1350,7 @@
       document.getElementById('alertCadastro').innerHTML = '';
     });
 
-    function listarImoveis(filtro = '') {
-      const imoveis = carregar(IMOVEIS_KEY);
-      const listaDiv = document.getElementById('listaImoveis');
-      listaDiv.innerHTML = '';
-
-      const imoveisFiltrados = imoveis.filter(i => 
-        Object.values(i).some(val => 
-          String(val).toLowerCase().includes(filtro.toLowerCase())
-        )
-      );
-
-      if (imoveisFiltrados.length === 0) {
-        listaDiv.innerHTML = '<div class="no-data">Nenhum imóvel encontrado.</div>';
-        return;
-      }
-
-      const table = document.createElement('table');
-      table.innerHTML = `
-        <thead>
-          <tr>
-            <th>Tipo</th>
-            <th>Endereço</th>
-            <th>Valor</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      `;
-      const tbody = table.querySelector('tbody');
-      imoveisFiltrados.forEach(imovel => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${imovel.tipo} (${imovel.finalidade})</td>
-          <td>${imovel.endereco}</td>
-          <td>${formatarMoeda(imovel.valor)}</td>
-          <td>${getBadge(imovel.status)}</td>
-          <td>
-            <button class="btn danger" onclick="deletarImovel('${imovel.id}')">
-              <span class="material-icons" style="font-size:16px">delete</span>
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-      listaDiv.appendChild(table);
-    }
-
-    window.deletarImovel = function(id) {
-      if (confirm('Tem certeza que deseja deletar este imóvel?')) {
-        let imoveis = carregar(IMOVEIS_KEY);
-        imoveis = imoveis.filter(i => i.id !== id);
-        salvar(IMOVEIS_KEY, imoveis);
-
-        let fotos = carregar(FOTOS_KEY);
-        fotos = fotos.filter(f => f.imovelId !== id);
-        salvar(FOTOS_KEY, fotos);
-
-        let visitas = carregar(VISITAS_KEY);
-        visitas = visitas.filter(v => v.imovelId !== id);
-        salvar(VISITAS_KEY, visitas);
-
-        listarImoveis();
-        mostrarAlerta('listaImoveis', 'Imóvel e dados associados deletados.', 'error');
-      }
-    }
-
-    document.getElementById('searchImoveis').addEventListener('input', function(e) {
-      listarImoveis(e.target.value);
-    });
-    document.getElementById('btnRefreshImoveis').addEventListener('click', () => listarImoveis());
-
-    document.getElementById('btnExportCsv').addEventListener('click', function() {
-      const imoveis = carregar(IMOVEIS_KEY);
-      if (imoveis.length === 0) {
-        alert('Nenhum dado para exportar.');
-        return;
-      }
-      const headers = Object.keys(imoveis[0]).join(',');
-      const rows = imoveis.map(i => Object.values(i).map(v => 
-          (typeof v === 'string' && v.includes(',')) ? `"${v}"` : v
-      ).join(','));
-      const csv = [headers, ...rows].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute("download", "imoveis_export.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      mostrarAlerta('listaImoveis', 'Dados exportados para CSV com sucesso!', 'success');
-    });
-
-    document.getElementById('btnExportPdf').addEventListener('click', function() {
+    document.getElementById('btnExportPdfFicha').addEventListener('click', function() {
       const form = document.getElementById('formCadastro');
       if (!form.checkValidity()) {
         form.reportValidity();
@@ -1239,7 +1358,7 @@
       }
       const doc = new window.jspdf.jsPDF();
       doc.setFontSize(16);
-      doc.text('Ficha de Cadastro de Imovel', 10, 10);
+      doc.text('Ficha de Cadastro de Imóvel', 10, 10);
       doc.setFontSize(10);
       let y = 20;
       const formData = new FormData(form);
@@ -1251,6 +1370,7 @@
       mostrarAlerta('alertCadastro', 'Ficha exportada para PDF!', 'success');
     });
 
+    // Lógica de upload de fotos para o cadastro
     const uploadBoxCadastro = document.getElementById('uploadBoxCadastro');
     const fileInputCadastro = document.getElementById('fileInputCadastro');
     const previewGridCadastro = document.getElementById('previewGridCadastro');
@@ -1303,8 +1423,161 @@
         previewGridCadastro.appendChild(div);
       });
     }
-    renderPreviewCadastro();
+    renderPreviewCadastro(); // Renderiza o preview inicial (vazio)
 
+    // ========== IMÓVEIS CADASTRADOS ==========
+    function aplicarFiltrosImoveis() {
+      const filtroTexto = document.getElementById('searchImoveis').value.toLowerCase();
+      const filtroTipo = document.getElementById('filterTipoImovel').value;
+      const filtroStatus = document.getElementById('filterStatusImovel').value;
+      const filtroValorMin = parseFloat(document.getElementById('filterValorMin').value) || 0;
+      const filtroValorMax = parseFloat(document.getElementById('filterValorMax').value) || Infinity;
+
+      const imoveis = carregar(IMOVEIS_KEY);
+      const imoveisFiltrados = imoveis.filter(i => {
+        const matchesText = Object.values(i).some(val => 
+          String(val).toLowerCase().includes(filtroTexto)
+        );
+        const matchesTipo = filtroTipo === '' || i.tipo === filtroTipo;
+        const matchesStatus = filtroStatus === '' || i.status === filtroStatus;
+        const matchesValor = i.valor >= filtroValorMin &amp;&amp; i.valor <= filtroValorMax;
+
+        return matchesText &amp;&amp; matchesTipo &amp;&amp; matchesStatus &amp;&amp; matchesValor;
+      });
+      renderizarTabelaImoveis(imoveisFiltrados);
+    }
+
+    function renderizarTabelaImoveis(imoveisParaRenderizar) {
+      const listaDiv = document.getElementById('listaImoveis');
+      listaDiv.innerHTML = '';
+
+      if (imoveisParaRenderizar.length === 0) {
+        listaDiv.innerHTML = '<div class="no-data">Nenhum imóvel encontrado com os filtros aplicados.</div>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Endereço</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Vendedor</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      imoveisParaRenderizar.forEach(imovel => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${imovel.tipo} (${imovel.finalidade})</td>
+          <td>${imovel.endereco}</td>
+          <td>${formatarMoeda(imovel.valor)}</td>
+          <td>
+            <select class="status-selector" data-imovel-id="${imovel.id}" onchange="alterarStatusImovel(this)">
+              <option value="Disponível" ${imovel.status === 'Disponível' ? 'selected' : ''}>Disponível</option>
+              <option value="Alugado" ${imovel.status === 'Alugado' ? 'selected' : ''}>Alugado</option>
+              <option value="Vendido" ${imovel.status === 'Vendido' ? 'selected' : ''}>Vendido</option>
+              <option value="Reservado" ${imovel.status === 'Reservado' ? 'selected' : ''}>Reservado</option>
+            </select>
+          </td>
+          <td>${imovel.vendedor || 'N/A'}</td>
+          <td>
+            <button class="btn danger" onclick="deletarImovel('${imovel.id}')">
+              <span class="material-icons" style="font-size:16px">delete</span>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      listaDiv.appendChild(table);
+    }
+
+    function listarImoveis() {
+      const imoveis = carregar(IMOVEIS_KEY);
+      renderizarTabelaImoveis(imoveis);
+    }
+
+    window.deletarImovel = function(id) {
+      if (confirm('Tem certeza que deseja deletar este imóvel?')) {
+        let imoveis = carregar(IMOVEIS_KEY);
+        imoveis = imoveis.filter(i => i.id !== id);
+        salvar(IMOVEIS_KEY, imoveis);
+
+        let fotos = carregar(FOTOS_KEY);
+        fotos = fotos.filter(f => f.imovelId !== id);
+        salvar(FOTOS_KEY, fotos);
+
+        let visitas = carregar(VISITAS_KEY);
+        visitas = visitas.filter(v => v.imovelId !== id);
+        salvar(VISITAS_KEY, visitas);
+
+        aplicarFiltrosImoveis(); // Re-aplica filtros para atualizar a lista
+        mostrarAlerta('listaImoveis', 'Imóvel e dados associados deletados.', 'error');
+        atualizarDashboard(); // Atualiza o dashboard
+      }
+    }
+
+    window.alterarStatusImovel = function(selectElement) {
+      const imovelId = selectElement.getAttribute('data-imovel-id');
+      const novoStatus = selectElement.value;
+      let imoveis = carregar(IMOVEIS_KEY);
+      const imovelIndex = imoveis.findIndex(i => i.id === imovelId);
+
+      if (imovelIndex > -1) {
+        imoveis[imovelIndex].status = novoStatus;
+        if (novoStatus === 'Vendido' &amp;&amp; !imoveis[imovelIndex].dataVenda) {
+          imoveis[imovelIndex].dataVenda = new Date().toISOString().split('T')[0];
+        } else if (novoStatus !== 'Vendido') {
+          imoveis[imovelIndex].dataVenda = null; // Limpa a data se não for vendido
+        }
+        salvar(IMOVEIS_KEY, imoveis);
+        mostrarAlerta('alertImoveis', `Status do imóvel atualizado para "${novoStatus}".`, 'success');
+        atualizarDashboard(); // Atualiza o dashboard
+      }
+    }
+
+    document.getElementById('searchImoveis').addEventListener('input', aplicarFiltrosImoveis);
+    document.getElementById('filterTipoImovel').addEventListener('change', aplicarFiltrosImoveis);
+    document.getElementById('filterStatusImovel').addEventListener('change', aplicarFiltrosImoveis);
+    document.getElementById('filterValorMin').addEventListener('input', aplicarFiltrosImoveis);
+    document.getElementById('filterValorMax').addEventListener('input', aplicarFiltrosImoveis);
+    document.getElementById('btnAplicarFiltros').addEventListener('click', aplicarFiltrosImoveis);
+    document.getElementById('btnLimparFiltros').addEventListener('click', function() {
+      document.getElementById('searchImoveis').value = '';
+      document.getElementById('filterTipoImovel').value = '';
+      document.getElementById('filterStatusImovel').value = '';
+      document.getElementById('filterValorMin').value = '';
+      document.getElementById('filterValorMax').value = '';
+      aplicarFiltrosImoveis();
+    });
+
+    document.getElementById('btnExportCsv').addEventListener('click', function() {
+      const imoveis = carregar(IMOVEIS_KEY);
+      if (imoveis.length === 0) {
+        alert('Nenhum dado para exportar.');
+        return;
+      }
+      const headers = Object.keys(imoveis[0]).join(',');
+      const rows = imoveis.map(i => Object.values(i).map(v => 
+          (typeof v === 'string' &amp;&amp; v.includes(',')) ? `"${v}"` : v
+      ).join(','));
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", "imoveis_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      mostrarAlerta('listaImoveis', 'Dados exportados para CSV com sucesso!', 'success');
+    });
+
+    // ========== GALERIA DE FOTOS ==========
     const uploadAreaGaleria = document.getElementById('uploadArea');
     const fileInputGaleria = document.getElementById('fileInput');
     const galleryGrid = document.getElementById('galleryGrid');
@@ -1333,9 +1606,9 @@
             fotos.push({
               id: gerarIdUnico(),
               dataUrl: e.target.result,
-              valor: 0,
+              valor: 0, // Valor padrão, pode ser editado depois
               descricao: 'Nova foto na galeria',
-              imovelId: null
+              imovelId: null // Pode ser associado a um imóvel depois
             });
             salvar(FOTOS_KEY, fotos);
             count++;
@@ -1401,6 +1674,7 @@
       listarFotos(e.target.value);
     });
 
+    // Modal de edição de foto
     const editModal = document.getElementById('editModal');
     const modalImage = document.getElementById('modalImage');
     const modalValor = document.getElementById('modalValor');
@@ -1442,6 +1716,7 @@
       }
     };
 
+    // ========== CLIENTES ==========
     document.getElementById('formClientes').addEventListener('submit', function(e) {
       e.preventDefault();
       const form = e.target;
@@ -1461,6 +1736,7 @@
       mostrarAlerta('alertClientes', 'Cliente salvo com sucesso!', 'success');
       form.reset();
       listarClientes();
+      atualizarDashboard(); // Atualiza o dashboard
     });
 
     document.getElementById('btnLimparCliente').addEventListener('click', function() {
@@ -1518,9 +1794,11 @@
 
         listarClientes();
         mostrarAlerta('listaClientes', 'Cliente deletado.', 'error');
+        atualizarDashboard(); // Atualiza o dashboard
       }
     }
 
+    // ========== VISITAS (Agendamento) ==========
     function preencherSelectsVisitas() {
       const imoveis = carregar(IMOVEIS_KEY);
       const clientes = carregar(CLIENTES_KEY);
@@ -1556,6 +1834,7 @@
       mostrarAlerta('alertVisitas', 'Visita agendada com sucesso!', 'success');
       form.reset();
       listarVisitas();
+      atualizarDashboard(); // Atualiza o dashboard
     });
 
     document.getElementById('btnLimparVisita').addEventListener('click', function() {
@@ -1611,33 +1890,46 @@
         visitas = visitas.filter(v => v.id !== id);
         salvar(VISITAS_KEY, visitas);
         listarVisitas();
+        atualizarDashboard(); // Atualiza o dashboard
       }
     }
 
+    // ========== FERRAMENTAS (Cálculo e Limpeza) ==========
     window.calcularFinanciamento = function() {
       const valorImovel = parseFloat(document.getElementById('valorImovel').value) || 0;
       const entrada = parseFloat(document.getElementById('entrada').value) || 0;
       const taxaAnual = parseFloat(document.getElementById('taxaJuros').value) || 0;
       const prazo = parseInt(document.getElementById('prazo').value) || 0;
+      const resultadoDiv = document.getElementById('resultadoFinanciamento');
+      const resultadoTexto = document.getElementById('resultadoTexto');
 
-      if (valorImovel <= 0 || prazo <= 0) {
-        alert('Preencha os valores corretamente');
+      if (valorImovel <= 0 || prazo <= 0 || taxaAnual < 0 || entrada >= valorImovel) {
+        resultadoTexto.innerHTML = '<p style="color:var(--danger)">Por favor, insira valores válidos para o cálculo.</p>';
+        resultadoDiv.style.display = 'block';
         return;
       }
 
       const valorFinanciado = valorImovel - entrada;
-      const taxaMensal = taxaAnual / 12 / 100;
-      const prestacao = valorFinanciado * (taxaMensal * Math.pow(1 + taxaMensal, prazo)) / (Math.pow(1 + taxaMensal, prazo) - 1);
-      const valorTotal = prestacao * prazo;
-      const jurosTotal = valorTotal - valorFinanciado;
+      const taxaMensal = (taxaAnual / 100) / 12;
+      let parcela;
 
-      document.getElementById('resultadoFinanciamento').style.display = 'block';
-      document.getElementById('resultadoTexto').innerHTML = `
-        <strong>Valor Financiado:</strong> ${formatarMoeda(valorFinanciado)}<br>
-        <strong>Prestação Mensal:</strong> ${formatarMoeda(prestacao)}<br>
-        <strong>Total a Pagar:</strong> ${formatarMoeda(valorTotal)}<br>
-        <strong>Juros Total:</strong> ${formatarMoeda(jurosTotal)}
+      if (taxaMensal === 0) {
+          parcela = valorFinanciado / prazo;
+      } else {
+          parcela = valorFinanciado * taxaMensal / (1 - Math.pow(1 + taxaMensal, -prazo));
+      }
+
+      const totalPagar = parcela * prazo;
+      const totalJuros = totalPagar - valorFinanciado;
+
+      resultadoTexto.innerHTML = `
+        <div>Valor Financiado: <strong>${formatarMoeda(valorFinanciado)}</strong></div>
+        <div>Taxa Mensal: <strong>${(taxaMensal * 100).toFixed(2)}%</strong></div>
+        <div>Parcela Estimada: <strong>${formatarMoeda(parcela)}</strong></div>
+        <div>Total Pago no Final: <strong>${formatarMoeda(totalPagar)}</strong></div>
+        <div>Juros Totais: <strong>${formatarMoeda(totalJuros)}</strong></div>
       `;
+      resultadoDiv.style.display = 'block';
     }
 
     function atualizarEstatisticas() {
@@ -1645,13 +1937,10 @@
       const clientes = carregar(CLIENTES_KEY);
       const visitas = carregar(VISITAS_KEY);
       const fotos = carregar(FOTOS_KEY);
-
       const disponiv = imoveis.filter(i => i.status === 'Disponível').length;
       const alugados = imoveis.filter(i => i.status === 'Alugado').length;
       const vendidos = imoveis.filter(i => i.status === 'Vendido').length;
-
       const valorTotal = imoveis.reduce((sum, i) => sum + i.valor, 0);
-
       document.getElementById('estatisticas').innerHTML = `
         <div style="font-size:14px;line-height:1.8">
           <strong>📊 Imóveis:</strong> ${imoveis.length} total<br>
@@ -1665,6 +1954,192 @@
         </div>
       `;
     }
+
+    // Limpar Todos os Dados
+    document.getElementById('btnLimparTodos').addEventListener('click', function() {
+      if (confirm('⚠️ ATENÇÃO! Você tem certeza que deseja APAGAR TODOS OS DADOS (Imóveis, Clientes, Visitas, Fotos)? Esta ação não pode ser desfeita.')) {
+        localStorage.removeItem(IMOVEIS_KEY);
+        localStorage.removeItem(CLIENTES_KEY);
+        localStorage.removeItem(VISITAS_KEY);
+        localStorage.removeItem(FOTOS_KEY);
+        fotosCadastro = []; // Limpa array temporário
+        renderPreviewCadastro(); // Limpa preview do cadastro
+        // Atualiza as listas e selects em todas as abas
+        listarImoveis();
+        listarClientes();
+        listarVisitas();
+        listarFotos();
+        preencherSelectsVisitas();
+        atualizarEstatisticas(); // Atualiza estatísticas
+        atualizarDashboard(); // Atualiza o dashboard
+        alert('Todos os dados foram removidos com sucesso!');
+        // Retorna para a aba de Cadastro
+        trocarAba('cadastro');
+      }
+    });
+
+    // ========== DASHBOARD ==========
+    function atualizarDashboard() {
+        const imoveis = carregar(IMOVEIS_KEY);
+        const clientes = carregar(CLIENTES_KEY);
+        const visitas = carregar(VISITAS_KEY);
+
+        // KPIs
+        const totalImoveis = imoveis.length;
+        const valorTotalCarteira = imoveis.reduce((sum, i) => sum + i.valor, 0);
+        const imoveisVendidos = imoveis.filter(i => i.status === 'Vendido');
+        const countImoveisVendidos = imoveisVendidos.length;
+        const valorTotalVendido = imoveisVendidos.reduce((sum, i) => sum + i.valor, 0);
+        const mediaPrecoVenda = countImoveisVendidos > 0 ? valorTotalVendido / countImoveisVendidos : 0;
+        const totalClientes = clientes.length;
+        const totalVisitas = visitas.length;
+
+        document.getElementById('totalImoveis').textContent = totalImoveis;
+        document.getElementById('valorTotalCarteira').textContent = formatarMoeda(valorTotalCarteira);
+        document.getElementById('imoveisVendidos').textContent = countImoveisVendidos;
+        document.getElementById('valorTotalVendido').textContent = formatarMoeda(valorTotalVendido);
+        document.getElementById('mediaPrecoVenda').textContent = formatarMoeda(mediaPrecoVenda);
+        document.getElementById('totalClientes').textContent = totalClientes;
+        document.getElementById('totalVisitas').textContent = totalVisitas;
+
+        // Gráficos
+        renderVendasPorVendedorChart(imoveisVendidos);
+        renderImoveisPorTipoChart(imoveis);
+        renderStatusImoveisChart(imoveis);
+    }
+
+    function renderVendasPorVendedorChart(imoveisVendidos) {
+        const vendasPorVendedor = imoveisVendidos.reduce((acc, imovel) => {
+            const vendedor = imovel.vendedor || 'Não Atribuído';
+            acc[vendedor] = (acc[vendedor] || 0) + 1;
+            return acc;
+        }, {});
+
+        const labels = Object.keys(vendasPorVendedor);
+        const data = Object.values(vendasPorVendedor);
+
+        const ctx = document.getElementById('vendasPorVendedorChart').getContext('2d');
+        if (vendasPorVendedorChart) vendasPorVendedorChart.destroy();
+        vendasPorVendedorChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Imóveis Vendidos',
+                    data: data,
+                    backgroundColor: labels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`), // Cores dinâmicas
+                    borderColor: labels.map((_, i) => `hsl(${i * 60}, 70%, 40%)`),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Vendas por Vendedor'
+                    },
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderImoveisPorTipoChart(imoveis) {
+        const imoveisPorTipo = imoveis.reduce((acc, imovel) => {
+            acc[imovel.tipo] = (acc[imovel.tipo] || 0) + 1;
+            return acc;
+        }, {});
+
+        const labels = Object.keys(imoveisPorTipo);
+        const data = Object.values(imoveisPorTipo);
+
+        const ctx = document.getElementById('imoveisPorTipoChart').getContext('2d');
+        if (imoveisPorTipoChart) imoveisPorTipoChart.destroy();
+        imoveisPorTipoChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Quantidade',
+                    data: data,
+                    backgroundColor: labels.map((_, i) => `hsl(${i * 45}, 80%, 60%)`),
+                    borderColor: var(--card),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Imóveis por Tipo'
+                    },
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+
+    function renderStatusImoveisChart(imoveis) {
+        const statusCounts = imoveis.reduce((acc, imovel) => {
+            acc[imovel.status] = (acc[imovel.status] || 0) + 1;
+            return acc;
+        }, {});
+
+        const labels = Object.keys(statusCounts);
+        const data = Object.values(statusCounts);
+        const backgroundColors = {
+            'Disponível': '#10b981',
+            'Alugado': '#3b82f6',
+            'Vendido': '#ef4444',
+            'Reservado': '#f59e0b'
+        };
+
+        const ctx = document.getElementById('statusImoveisChart').getContext('2d');
+        if (statusImoveisChart) statusImoveisChart.destroy();
+        statusImoveisChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Quantidade',
+                    data: data,
+                    backgroundColor: labels.map(label => backgroundColors[label] || '#cccccc'),
+                    borderColor: var(--card),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Status dos Imóveis'
+                    },
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+
   </script>
 </body>
 </html>
