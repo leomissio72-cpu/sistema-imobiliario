@@ -734,6 +734,11 @@
           <span class="material-icons">calculate</span>
           <span class="label">Ferramentas</span>
         </button>
+        <!-- Botão adicional para vendas por corretor -->
+        <button class="nav-btn" data-tab="vendas-corretor">
+          <span class="material-icons">bar_chart</span>
+          <span class="label">Vendas por Corretor</span>
+        </button>
       </nav>
       <div class="sidebar-footer">
         <div style="font-size:12px;margin-top:8px">
@@ -790,6 +795,10 @@
                 <div class="label">Total de Visitas</div>
                 <div class="value" id="totalVisitas">0</div>
               </div>
+              <div class="stat-card">
+                <div class="label">Taxa de Conversão</div>
+                <div class="value" id="taxaConversao">0%</div>
+              </div>
             </div>
 
             <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
@@ -801,6 +810,9 @@
                 </div>
                 <div class="chart-container">
                     <canvas id="statusImoveisChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="vendasMensaisChart"></canvas>
                 </div>
             </div>
           </div>
@@ -911,6 +923,10 @@
                 </button>
                 <button type="button" class="btn ghost" id="btnExportPdfFicha">
                   <span class="material-icons">picture_as_pdf</span> Exportar Ficha PDF
+                </button>
+                <!-- Botão para adicionar mais dados de exemplo -->
+                <button type="button" class="btn success" id="btnMaisDados">
+                  <span class="material-icons">add_circle</span> Adicionar Dados de Exemplo
                 </button>
               </div>
             </form>
@@ -1148,6 +1164,36 @@
           </div>
         </section>
 
+        <!-- Nova aba: Vendas por Corretor -->
+        <section id="vendas-corretor" class="tab-content">
+          <div class="container">
+            <h2>Vendas por Corretor</h2>
+            <div class="actions">
+              <label style="flex:1">
+                Período
+                <select id="periodoVendas">
+                  <option value="todos">Todos</option>
+                  <option value="mes_atual">Mês Atual</option>
+                  <option value="trimestre">Último Trimestre</option>
+                  <option value="ano">Ano Atual</option>
+                </select>
+              </label>
+              <button type="button" class="btn primary" id="btnAtualizarRelatorio">
+                <span class="material-icons">refresh</span> Atualizar Relatório
+              </button>
+              <button type="button" class="btn ghost" id="btnExportarRelatorio">
+                <span class="material-icons">download</span> Exportar Relatório
+              </button>
+            </div>
+            <div class="chart-container">
+                <canvas id="vendasCorretorChart"></canvas>
+            </div>
+            <div id="tabelaVendasCorretor">
+              <div class="no-data">Nenhuma venda registrada.</div>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
 
@@ -1183,6 +1229,8 @@
     let vendasPorVendedorChart = null;
     let imoveisPorTipoChart = null;
     let statusImoveisChart = null;
+    let vendasMensaisChart = null;
+    let vendasCorretorChart = null;
 
     // Funções utilitárias
     function salvar(key, data) {
@@ -1235,7 +1283,8 @@
       'galeria': 'Galeria de Fotos',
       'clientes': 'Clientes',
       'visitas': 'Visitas Agendadas',
-      'ferramentas': 'Ferramentas'
+      'ferramentas': 'Ferramentas',
+      'vendas-corretor': 'Vendas por Corretor'
     };
 
     // Função principal para trocar de aba
@@ -1274,6 +1323,9 @@
           case 'ferramentas':
             atualizarEstatisticas();
             break;
+          case 'vendas-corretor':
+            atualizarRelatorioVendasCorretor();
+            break;
           default:
             break;
         }
@@ -1293,6 +1345,9 @@
 
       // Inicia na aba Dashboard
       trocarAba('dashboard'); 
+      
+      // Adiciona dados de exemplo se não houver dados
+      inicializarDadosExemplo();
     });
 
     // ========== CADASTRO DE IMÓVEL ==========
@@ -1368,6 +1423,13 @@
       }
       doc.save('ficha_imovel.pdf');
       mostrarAlerta('alertCadastro', 'Ficha exportada para PDF!', 'success');
+    });
+
+    // Botão para adicionar mais dados de exemplo
+    document.getElementById('btnMaisDados').addEventListener('click', function() {
+      adicionarDadosExemplo();
+      mostrarAlerta('alertCadastro', 'Dados de exemplo adicionados com sucesso!', 'success');
+      atualizarDashboard();
     });
 
     // Lógica de upload de fotos para o cadastro
@@ -1993,6 +2055,7 @@
         const mediaPrecoVenda = countImoveisVendidos > 0 ? valorTotalVendido / countImoveisVendidos : 0;
         const totalClientes = clientes.length;
         const totalVisitas = visitas.length;
+        const taxaConversao = totalVisitas > 0 ? (countImoveisVendidos / totalVisitas * 100).toFixed(1) : 0;
 
         document.getElementById('totalImoveis').textContent = totalImoveis;
         document.getElementById('valorTotalCarteira').textContent = formatarMoeda(valorTotalCarteira);
@@ -2001,11 +2064,13 @@
         document.getElementById('mediaPrecoVenda').textContent = formatarMoeda(mediaPrecoVenda);
         document.getElementById('totalClientes').textContent = totalClientes;
         document.getElementById('totalVisitas').textContent = totalVisitas;
+        document.getElementById('taxaConversao').textContent = `${taxaConversao}%`;
 
         // Gráficos
         renderVendasPorVendedorChart(imoveisVendidos);
         renderImoveisPorTipoChart(imoveis);
         renderStatusImoveisChart(imoveis);
+        renderVendasMensaisChart(imoveisVendidos);
     }
 
     function renderVendasPorVendedorChart(imoveisVendidos) {
@@ -2075,7 +2140,7 @@
                     label: 'Quantidade',
                     data: data,
                     backgroundColor: labels.map((_, i) => `hsl(${i * 45}, 80%, 60%)`),
-                    borderColor: var(--card),
+                    borderColor: 'var(--card)',
                     borderWidth: 1
                 }]
             },
@@ -2120,7 +2185,7 @@
                     label: 'Quantidade',
                     data: data,
                     backgroundColor: labels.map(label => backgroundColors[label] || '#cccccc'),
-                    borderColor: var(--card),
+                    borderColor: 'var(--card)',
                     borderWidth: 1
                 }]
             },
@@ -2138,6 +2203,403 @@
                 }
             }
         });
+    }
+
+    function renderVendasMensaisChart(imoveisVendidos) {
+        // Agrupa vendas por mês
+        const vendasPorMes = imoveisVendidos.reduce((acc, imovel) => {
+            if (imovel.dataVenda) {
+                const mes = imovel.dataVenda.substring(0, 7); // Formato YYYY-MM
+                acc[mes] = (acc[mes] || 0) + 1;
+            }
+            return acc;
+        }, {});
+
+        const labels = Object.keys(vendasPorMes).sort();
+        const data = labels.map(mes => vendasPorMes[mes]);
+
+        const ctx = document.getElementById('vendasMensaisChart').getContext('2d');
+        if (vendasMensaisChart) vendasMensaisChart.destroy();
+        vendasMensaisChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vendas Mensais',
+                    data: data,
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Vendas Mensais'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ========== VENDAS POR CORRETOR ==========
+    function atualizarRelatorioVendasCorretor() {
+        const periodo = document.getElementById('periodoVendas').value;
+        const imoveis = carregar(IMOVEIS_KEY);
+        
+        // Filtra imóveis vendidos por período
+        let imoveisVendidos = imoveis.filter(i => i.status === 'Vendido');
+        
+        if (periodo !== 'todos') {
+            const hoje = new Date();
+            let dataInicio;
+            
+            switch(periodo) {
+                case 'mes_atual':
+                    dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                    break;
+                case 'trimestre':
+                    dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 3, 1);
+                    break;
+                case 'ano':
+                    dataInicio = new Date(hoje.getFullYear(), 0, 1);
+                    break;
+            }
+            
+            imoveisVendidos = imoveisVendidos.filter(i => {
+                if (!i.dataVenda) return false;
+                const dataVenda = new Date(i.dataVenda);
+                return dataVenda >= dataInicio;
+            });
+        }
+        
+        // Agrupa por vendedor
+        const vendasPorCorretor = imoveisVendidos.reduce((acc, imovel) => {
+            const vendedor = imovel.vendedor || 'Não Atribuído';
+            if (!acc[vendedor]) {
+                acc[vendedor] = {
+                    quantidade: 0,
+                    valorTotal: 0,
+                    imoveis: []
+                };
+            }
+            acc[vendedor].quantidade += 1;
+            acc[vendedor].valorTotal += imovel.valor;
+            acc[vendedor].imoveis.push(imovel);
+            return acc;
+        }, {});
+        
+        // Renderiza o gráfico
+        renderVendasCorretorChart(vendasPorCorretor);
+        
+        // Renderiza a tabela
+        renderTabelaVendasCorretor(vendasPorCorretor);
+    }
+
+    function renderVendasCorretorChart(vendasPorCorretor) {
+        const labels = Object.keys(vendasPorCorretor);
+        const dataQuantidade = labels.map(vendedor => vendasPorCorretor[vendedor].quantidade);
+        const dataValor = labels.map(vendedor => vendasPorCorretor[vendedor].valorTotal);
+
+        const ctx = document.getElementById('vendasCorretorChart').getContext('2d');
+        if (vendasCorretorChart) vendasCorretorChart.destroy();
+        vendasCorretorChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Quantidade de Vendas',
+                        data: dataQuantidade,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Valor Total (R$)',
+                        data: dataValor,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Vendas por Corretor'
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Quantidade'
+                        },
+                        beginAtZero: true
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Valor (R$)'
+                        },
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderTabelaVendasCorretor(vendasPorCorretor) {
+        const tabelaDiv = document.getElementById('tabelaVendasCorretor');
+        tabelaDiv.innerHTML = '';
+        
+        if (Object.keys(vendasPorCorretor).length === 0) {
+            tabelaDiv.innerHTML = '<div class="no-data">Nenhuma venda registrada no período selecionado.</div>';
+            return;
+        }
+        
+        const table = document.createElement('table');
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Corretor</th>
+                    <th>Quantidade</th>
+                    <th>Valor Total</th>
+                    <th>Valor Médio</th>
+                    <th>Detalhes</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        
+        const tbody = table.querySelector('tbody');
+        
+        Object.entries(vendasPorCorretor).forEach(([vendedor, dados]) => {
+            const valorMedio = dados.quantidade > 0 ? dados.valorTotal / dados.quantidade : 0;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${vendedor}</td>
+                <td>${dados.quantidade}</td>
+                <td>${formatarMoeda(dados.valorTotal)}</td>
+                <td>${formatarMoeda(valorMedio)}</td>
+                <td>
+                    <button class="btn ghost" onclick="mostrarDetalhesVendedor('${vendedor}')">
+                        <span class="material-icons" style="font-size:16px">visibility</span>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        tabelaDiv.appendChild(table);
+    }
+
+    window.mostrarDetalhesVendedor = function(vendedor) {
+        const imoveis = carregar(IMOVEIS_KEY);
+        const imoveisVendedor = imoveis.filter(i => i.vendedor === vendedor &amp;&amp; i.status === 'Vendido');
+        
+        let detalhes = `Detalhes das vendas de ${vendedor}:\n\n`;
+        imoveisVendedor.forEach(imovel => {
+            detalhes += `- ${imovel.tipo} em ${imovel.endereco}: ${formatarMoeda(imovel.valor)} (${imovel.dataVenda})\n`;
+        });
+        
+        alert(detalhes);
+    }
+
+    // Botões da aba Vendas por Corretor
+    document.getElementById('btnAtualizarRelatorio').addEventListener('click', atualizarRelatorioVendasCorretor);
+    document.getElementById('btnExportarRelatorio').addEventListener('click', function() {
+        const periodo = document.getElementById('periodoVendas').value;
+        const imoveis = carregar(IMOVEIS_KEY);
+        
+        // Filtra imóveis vendidos por período
+        let imoveisVendidos = imoveis.filter(i => i.status === 'Vendido');
+        
+        if (periodo !== 'todos') {
+            const hoje = new Date();
+            let dataInicio;
+            
+            switch(periodo) {
+                case 'mes_atual':
+                    dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                    break;
+                case 'trimestre':
+                    dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 3, 1);
+                    break;
+                case 'ano':
+                    dataInicio = new Date(hoje.getFullYear(), 0, 1);
+                    break;
+            }
+            
+            imoveisVendidos = imoveisVendidos.filter(i => {
+                if (!i.dataVenda) return false;
+                const dataVenda = new Date(i.dataVenda);
+                return dataVenda >= dataInicio;
+            });
+        }
+        
+        // Cria CSV
+        const headers = ['Vendedor', 'Tipo', 'Endereço', 'Valor', 'Data Venda'];
+        const rows = imoveisVendidos.map(i => [
+            i.vendedor || 'Não Atribuído',
+            i.tipo,
+            i.endereco,
+            i.valor,
+            i.dataVenda || 'N/A'
+        ]);
+        
+        const csv = [headers, ...rows].map(row => 
+            row.map(cell => (typeof cell === 'string' &amp;&amp; cell.includes(',')) ? `"${cell}"` : cell).join(',')
+        ).join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `vendas_corretores_${periodo}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // ========== DADOS DE EXEMPLO ==========
+    function inicializarDadosExemplo() {
+        const imoveis = carregar(IMOVEIS_KEY);
+        const clientes = carregar(CLIENTES_KEY);
+        
+        // Só adiciona dados de exemplo se não houver dados
+        if (imoveis.length === 0 &amp;&amp; clientes.length === 0) {
+            adicionarDadosExemplo();
+        }
+    }
+
+    function adicionarDadosExemplo() {
+        // Dados de exemplo para imóveis
+        const imoveisExemplo = [
+            {
+                id: gerarIdUnico(),
+                dataCadastro: '2023-10-15',
+                tipo: 'Casa',
+                finalidade: 'Venda',
+                endereco: 'Rua das Flores, 123, Centro, São Paulo - SP',
+                cep: '01234-567',
+                area: 180,
+                quartos: 3,
+                banheiros: 2,
+                vagas: 2,
+                valor: 850000,
+                condominio: 0,
+                iptu: 1200,
+                status: 'Vendido',
+                proprietario: 'Maria Silva',
+                vendedor: 'João Santos',
+                observacoes: 'Casa com piscina e jardim amplo',
+                fotos: [],
+                dataVenda: '2023-11-20'
+            },
+            {
+                id: gerarIdUnico(),
+                dataCadastro: '2023-11-10',
+                tipo: 'Apartamento',
+                finalidade: 'Aluguel',
+                endereco: 'Av. Paulista, 1000, Bela Vista, São Paulo - SP',
+                cep: '01310-100',
+                area: 85,
+                quartos: 2,
+                banheiros: 2,
+                vagas: 1,
+                valor: 450000,
+                condominio: 800,
+                iptu: 600,
+                status: 'Disponível',
+                proprietario: 'Carlos Oliveira',
+                vendedor: 'Ana Costa',
+                observacoes: 'Apartamento com vista para a Paulista',
+                fotos: [],
+                dataVenda: null
+            },
+            {
+                id: gerarIdUnico(),
+                dataCadastro: '2023-12-05',
+                tipo: 'Terreno',
+                finalidade: 'Venda',
+                endereco: 'Rua das Palmeiras, 500, Jardins, São Paulo - SP',
+                cep: '01420-000',
+                area: 300,
+                quartos: 0,
+                banheiros: 0,
+                vagas: 0,
+                valor: 1200000,
+                condominio: 0,
+                iptu: 2500,
+                status: 'Disponível',
+                proprietario: 'Roberto Almeida',
+                vendedor: 'Pedro Lima',
+                observacoes: 'Terreno plano, pronto para construção',
+                fotos: [],
+                dataVenda: null
+            }
+        ];
+        
+        // Dados de exemplo para clientes
+        const clientesExemplo = [
+            {
+                id: gerarIdUnico(),
+                nome: 'Fernanda Oliveira',
+                documento: '123.456.789-00',
+                telefone: '(11) 99999-1234',
+                email: 'fernanda@email.com',
+                interesse: 'Apartamento de 2 quartos próximo ao metrô',
+                observacoes: 'Cliente interessado em imóveis na região central',
+                dataCadastro: '2023-10-20'
+            },
+            {
+                id: gerarIdUnico(),
+                nome: 'Ricardo Santos',
+                documento: '987.654.321-00',
+                telefone: '(11) 98888-5678',
+                email: 'ricardo@email.com',
+                interesse: 'Casa com garagem para 2 carros',
+                observacoes: 'Cliente procura imóvel para moradia com família',
+                dataCadastro: '2023-11-15'
+            }
+        ];
+        
+        // Salva os dados de exemplo
+        salvar(IMOVEIS_KEY, imoveisExemplo);
+        salvar(CLIENTES_KEY, clientesExemplo);
+        
+        // Atualiza as visualizações
+        atualizarDashboard();
+        listarImoveis();
+        listarClientes();
     }
 
   </script>
